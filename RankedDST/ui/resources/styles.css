@@ -1,0 +1,23 @@
+@font-face {
+    font-family: "BelisaPlumilla";
+    src: url("fonts/belisa_plumilla.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+:root {
+    --klei: "BelisaPlumilla"
+}
+
+body {
+    margin: 0;
+    font-family: var(--klei), sans-serif;
+    background: #111;
+    color: #eee;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 100vh;
+}
