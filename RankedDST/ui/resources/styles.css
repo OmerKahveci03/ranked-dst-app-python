@@ -6,7 +6,11 @@
 }
 
 :root {
-    --klei: "BelisaPlumilla"
+    --klei: "BelisaPlumilla";
+
+    --primary: #4d4d4d;
+    --secondary: #daa520;
+    --tertiary: #ffffff;
 }
 
 body {
@@ -16,8 +20,79 @@ body {
     color: #eee;
 
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
 
-    height: 100vh;
+    height: 100%;
+    width: 100%;
+}
+
+.button {
+    font-family: var(--klei);
+    font-size: 48px;
+    color: var(--tertiary);
+
+    border: 2px solid var(--tertiary);
+    border-radius: 6px;
+
+    padding: 25px;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover{
+        font-size: 54px;
+        color: var(--secondary);
+    }
+}
+
+#header {
+    width: 100%;
+
+    background-color: var(--secondary);
+
+    height: 70px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    #connecting-section {
+        font-size: 36px;
+    }
+
+    #connected-section {
+        font-size: 36px;
+    }
+
+    #klei-secret-section {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+
+        background-color: var(--tertiary);
+
+        #klei-secret-button {
+            font-family: var(--klei);
+            font-size: 24px;
+            color: var(--primary);
+
+            background-color: var(--tertiary);
+
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+
+            padding: 10px;
+
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover{
+                color: var(--tertiary);
+                background-color: var(--primary);
+                border: 2px solid var(--tertiary);
+            }
+        }
+    }
 }

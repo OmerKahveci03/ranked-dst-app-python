@@ -3,9 +3,40 @@
 <head>
   <meta charset="utf-8">
   <title>Ranked DST</title>
-  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <h1>Hello Ranked DST 👋</h1>
+  <div id="header">
+      <!-- Server May Be Down -->
+    <div id="no-connection-section">
+      Failed to Reach Servers. Check your internet connection
+    </div>
+
+    <!-- Not Connected -->
+    <div id="klei-secret-section">
+      <input
+        id="klei-secret-input"
+        type="password"
+        placeholder="Enter Klei Secret"
+        autocomplete="off"
+      />
+      <div id="klei-secret-button" onclick="saveKleiSecret()">Save</div>
+    </div>
+
+    <!-- Connecting -->
+    <div id="connecting-section">
+      Connecting
+    </div>
+
+    <!-- Connected -->
+    <div id="connected-section">
+      Connected
+    </div>
+  </div>
+  <h1 id="greeting">Hello Ranked DST 👋</h1>
+  <div class="button" onclick="onPress()">Press Me</div>
+
+  <script src="./ui_actions.js"></script>
+  <script src="./ui_updates.js"></script>
 </body>
 </html>

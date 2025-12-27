@@ -10,11 +10,11 @@ from flask import Flask, request, Response
 import requests
 import json
 
-import RankedDST.state as state
+import RankedDST.tools.state as state
 
 
 def _backend_url() -> str:
-    if state.Developing:
+    if state.DEVELOPING:
         return "http://localhost:5000"
     return "https://dontgetlosttogether.com/api"
 
