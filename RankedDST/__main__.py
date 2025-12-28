@@ -1,6 +1,5 @@
 import threading
 
-from RankedDST.dedicated_server.world_launcher import start_dedicated_server
 from RankedDST.ui.window import create_window
 
 from RankedDST.networking.proxy import start_proxy_server
@@ -37,10 +36,3 @@ if __name__ == "__main__":
 
     logger.info("Creating User Interface")
     create_window(title="Ranked DST")
-
-    # print("Starting Dedicated Server")
-    # start_dedicated_server(
-    #     static_dir=static_dir,
-    #     cluster_dir=cluster_dir,
-    #     nullrender_fp=nullrender_fp,
-    # )

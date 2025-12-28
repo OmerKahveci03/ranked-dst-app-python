@@ -8,28 +8,31 @@
 :root {
     --klei: "BelisaPlumilla";
 
-    --primary: #4d4d4d;
+    --primary: #1f1f1f;
     --secondary: #daa520;
     --tertiary: #ffffff;
+
+    --primaryGradient: linear-gradient(144deg, #000000 5%, var(--primary) 50%, #000000 95%);
 }
 
 body {
     margin: 0;
     font-family: var(--klei), sans-serif;
-    background: #111;
+    background: var(--primaryGradient);
+    
     color: #eee;
 
     display: flex;
     flex-direction: column;
     align-items: center;
 
-    height: 100%;
+    height: 100vh;
     width: 100%;
 }
 
 .button {
     font-family: var(--klei);
-    font-size: 48px;
+    font-size: 24px;
     color: var(--tertiary);
 
     border: 2px solid var(--tertiary);
@@ -41,7 +44,7 @@ body {
     transition: all 0.2s ease;
 
     &:hover{
-        font-size: 54px;
+        font-size: 28px;
         color: var(--secondary);
     }
 }
@@ -63,6 +66,12 @@ body {
 
     #connected-section {
         font-size: 36px;
+        width: 100%;
+        height: 100%;
+
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
     }
 
     #klei-secret-section {
@@ -95,4 +104,15 @@ body {
             }
         }
     }
+}
+
+#main-body {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 30px;
 }

@@ -4,17 +4,6 @@
     They are meant to mutate the user interface.
 */
 
-function changeText(newText) {
-    const header = document.getElementById("greeting");
-
-    header.textContent = (newText);
-}
-
-function matchStateChanged() {
-
-}
-
-
 // The list of elements to display for the given connection state
 const connectionStateElements = {
     not_connected: ["klei-secret-section"],
@@ -46,6 +35,12 @@ function connectionStateChanged(newState) {
     console.log("Connection state: ", newState);
 
     showStateElements(connectionStateElements, newState);
+}
+
+function matchStateChanged(newState) {
+    const matchStatusElement = document.getElementById("match-status")
+
+    matchStatusElement.textContent = newState
 }
 
 function dediPathStateChanged() {

@@ -46,7 +46,7 @@ def connect_websocket() -> None:
     raw_secret = state.get_user_data("klei_secret")
     if not raw_secret:
         state.set_connection_state(state.ConnectionNotConnected, window_object)
-        state.set_match_state(state.MatchNone)
+        state.set_match_state(state.MatchNone, window_object)
         stop_dedicated_server()
         logger.info("🕹️ No Klei secret stored — skipping connection.")
         return
@@ -68,11 +68,27 @@ def connect_websocket() -> None:
         logger.info("✅ Socket.IO connected to /proxy")
         state.set_connection_state(state.ConnectionConnected, window_object)
 
+        match_id = state.get_user_data("match_id")
+        if not match_id:
+            print("Not in a match")
+            state.set_match_state(state.MatchNone, window_object)
+            return
+        
+        print("In a match! Requesting world files!")
+        client_socket.emit(
+            "request_world_files",
+            {
+                "match_id": match_id,
+                "klei_secret_hash": hashed,
+            },
+            namespace="/proxy"
+        )
+
     @client_socket.on("disconnect", namespace="/proxy")
     def on_proxy_disconnect():
         logger.info("⚠️ Lost connection to server")
         state.set_connection_state(state.ConnectionServerDown, window_object)
-        state.set_match_state(state.MatchNone)
+        state.set_match_state(state.MatchNone, window_object)
 
     @client_socket.on("connection_accepted", namespace="/proxy")
     def on_connection_accepted(data):
@@ -83,18 +99,6 @@ def connect_websocket() -> None:
         match_id = data.get("match_id", None)
 
         state.set_user_data({"user_id" : user_id, "username" : username, "match_id" : match_id})
-
-        if match_id is not None:
-            client_socket.emit(
-                "request_world_files",
-                {
-                    "match_id": match_id,
-                    "klei_secret_hash": hashed,
-                },
-                namespace="/proxy",
-            )
-        else:
-            state.set_match_state(state.MatchNone)
 
     @client_socket.on("connection_denied", namespace="/proxy")
     def on_connection_denied(_):
@@ -107,9 +111,10 @@ def connect_websocket() -> None:
     @client_socket.on("generate_world", namespace="/proxy")
     def on_generate_world(data):
         logger.info("🎉 Received generate_world from backend")
-
+        state.set_match_state(new_state=state.MatchWorldGenerating, window=window_object)
+        
         try:
-            start_dedicated_server(data)
+            start_dedicated_server(server_configs=data)
         except Exception as e:
             logger.info(f"❌ Failed to launch dedicated server: {e}")
 
@@ -117,13 +122,13 @@ def connect_websocket() -> None:
     def on_run_complete(_):
         logger.info("Player's run is complete! Shutting down server")
         stop_dedicated_server()
-        state.set_match_state(state.MatchCompleted)
+        state.set_match_state(state.MatchCompleted, window_object)
 
     @client_socket.on("match_complete", namespace="/proxy")
     def on_match_complete(_):
         logger.info("Match complete. Shutting down server")
         stop_dedicated_server()
-        state.set_match_state(state.MatchNone)
+        state.set_match_state(state.MatchNone, window_object)
 
     try:
         client_socket.connect(

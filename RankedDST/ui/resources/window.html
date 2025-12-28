@@ -30,12 +30,17 @@
 
     <!-- Connected -->
     <div id="connected-section">
-      Connected
+      <div class="connection-status">Connected</div>
+      <div id="match-status"></div>
     </div>
   </div>
-  <h1 id="greeting">Hello Ranked DST 👋</h1>
-  <div class="button" onclick="onPress()">Press Me</div>
+  <div id="main-body">
+    <h1 id="greeting">Hello Ranked DST 👋</h1>
+    <div class="button" onclick="onPress()">Press Me</div>
 
+    <div class="button" onclick="onStartServerClicked()">Start Server</div>
+    <div class="button" onclick="onStopServerClicked()">Stop Server</div>
+  </div>
   <script src="./ui_actions.js"></script>
   <script src="./ui_updates.js"></script>
 </body>

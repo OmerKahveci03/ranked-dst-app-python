@@ -5,9 +5,17 @@ Production is implemented in the GoLang app.
 """
 
 import os
+import re
 import subprocess
 import shutil
+import time
 import threading
+
+import RankedDST.tools.state as state
+
+from pathlib import Path
+from RankedDST.tools.logger import logger, server_logger
+from RankedDST.dedicated_server.server_manager import SERVER_MANAGER
 
 def launch_shard(
     nullrender_fp: str,
@@ -28,7 +36,7 @@ def launch_shard(
         The folder name containing valid world files, such as cluster.ini, server.ini... etc.
     """
     assert shard in ["Master", "Caves"], "Shard must be 'Master' or 'Caves'"
-    print(f" Launching {shard} Shard!")
+    logger.info(f" Launching {shard} Shard!")
     cmd = [
         nullrender_fp,
         "-cluster", cluster_name,
@@ -46,34 +54,217 @@ def launch_shard(
 
     def stream_output():
         for line in proc.stdout:
-            print(f"[{shard}] {line}", end="")
+            server_logger.info("[%s] %s", shard, line.rstrip())
 
     threading.Thread(target=stream_output, daemon=True).start()
 
     return proc
 
 def start_dedicated_server(
-    static_dir: str,
-    cluster_dir: str,
-    nullrender_fp: str,
+    server_configs: dict[str, str],
+    base_cluster_dir: str = r"C:\Users\ofsys\Documents\Klei\DoNotStarveTogether", # to do: dont make these default arguments
+    nullrender_fp: str = r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe",
 ) -> None:
     """
-    Copies the cluster.ini, server.ini, worldgenoverride.lua, and modoverrides.lua
-    files into the cluster dir. Then launches the master and caves shards using the
-    nullrender executable
-
     Parameters
     ----------
-    static_dir: str
-        The static folder containing the world files to be copied into the cluster directory
-    cluster_dir: str
-        The cluster folder to be created. Used to generate the world.
+    base_cluster_dir: str
+        The directory for the cluster folder to be created in.
     nullrender_fp: str
         The full path to the executable that launches and hosts the DST world.
+    server_configs: dict[str, str]
+        A dictionary containing all files to be written. The key is the file type and the value is the
+        entire contents of the file. The 'MatchId' and 'ModIds' are also provided.
+
+        Expected keys: 
+        ```
+        "MatchId", "ModIds"
+        "ClusterIni", "MasterServerIni", "CavesServerIni",  # .ini files
+        "MasterWorldGenOverride", "CavesWorldGenOverride", "ModOverrides", # .lua files
+        ```
     """
     
     assert os.path.exists(nullrender_fp), "Nullrender binary must exist"
+
+    if SERVER_MANAGER.is_running():
+        logger.info("⚠️ Dedicated server already running ⚠️")
+        return
+
+    match_id = server_configs.pop("MatchId")
+    mod_ids = server_configs.pop("ModIds")
+
+    cluster_name = f"Ranked DST Match {match_id}"
+    cluster_dir = os.path.join(base_cluster_dir, cluster_name)
+    create_cluster(cluster_dir=cluster_dir, server_configs=server_configs)
+
+    # to do: derive the mods path somehow
+    ensure_mods(mod_ids=mod_ids, steam_mods_path=r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\mods")
+
+    master_process = launch_shard(
+        nullrender_fp=nullrender_fp,
+        shard="Master",
+        cluster_name=cluster_name
+    )
+
+    caves_process = launch_shard(
+        nullrender_fp=nullrender_fp,
+        shard="Caves",
+        cluster_name=cluster_name
+    )
+
+    SERVER_MANAGER.set(master_process, caves_process)
+    logger.info("Launched both master and caves!")
+
+def stop_dedicated_server(timeout: float = 1.0):
+    if not SERVER_MANAGER.is_running:
+        logger.info("Dedicated server was not running. Nothing to shutdown.")
+        return
     
+    logger.info("🛑 STOPPING DEDICATED SERVER 🛑")
+
+    with SERVER_MANAGER.lock:
+        processes = {
+            "master" : SERVER_MANAGER.master, 
+            "caves" : SERVER_MANAGER.caves
+        }
+
+    # Gracefully terminate
+    for shard, proc in processes.items():
+        if proc and proc.poll() is None:
+            logger.info(f"Gracefully terminating {shard} process")
+            proc.terminate()
+    
+    start = time.time()
+    while time.time() - start < timeout:
+        if all(proc.poll() is not None for proc in processes.values() if proc):
+            break
+        time.sleep(0.1)
+
+    # Force kill if needed
+    for shard, proc in processes.items():
+        if proc and proc.poll() is None:
+            logger.info(f"💀 Force killing {shard} shard 💀")
+            proc.kill()
+
+    SERVER_MANAGER.clear()
+    logger.info("✅ Dedicated server stopped ✅")
+
+def create_cluster(
+    cluster_dir: str,
+    server_configs: dict[str, str],
+) -> None:
+    """
+    Writes the cluster files to disk if not already present
+
+    Parameters
+    ----------
+    cluster_dir: str
+        The full file path to the cluster file
+    server_configs: dict[str, str]
+        A dictionary containing all files to be written. The key is the file type and the value is the
+        entire contents of the file.
+
+        Expected keys: 
+        ```
+        "ClusterIni", "MasterServerIni", "CavesServerIni",  # .ini files
+        "MasterWorldGenOverride", "CavesWorldGenOverride", "ModOverrides" # .lua files
+        ```
+    """
+    if os.path.exists(cluster_dir):
+        logger.info("Cluster directory already exists!")
+        return
+
+    logger.info(f"Creating cluster directory at: '{cluster_dir}'")
+    os.makedirs(cluster_dir, exist_ok=True)
+    os.makedirs(os.path.join(cluster_dir, "Master"), exist_ok=True)
+    os.makedirs(os.path.join(cluster_dir, "Caves"), exist_ok=True)
+
+    required_keys = ["ClusterIni", "MasterServerIni", "CavesServerIni", "MasterWorldGenOverride", "CavesWorldGenOverride", "ModOverrides"]
+    if any(required_key not in server_configs.keys() for required_key in required_keys):
+        logger.error("Missing required file")
+        raise ValueError("Missing required file")
+    
+    # Location at cluster_dir
+    key_to_path = {
+        "ClusterIni": "cluster.ini",
+        "MasterServerIni" : os.path.join("Master", "server.ini"),
+        "CavesServerIni" : os.path.join("Caves", "server.ini"),
+        "MasterWorldGenOverride" : os.path.join("Master", "worldgenoverride.lua"),
+        "CavesWorldGenOverride" : os.path.join("Caves", "worldgenoverride.lua"),
+    }
+
+    for key, path in key_to_path.items():
+        write_fp = os.path.join(cluster_dir, path)
+        write_text = server_configs.get(key)
+        with open(write_fp, mode="w", encoding="utf-8") as file:
+            file.write(write_text)
+
+    for shard in ["Master", "Caves"]:
+        write_fp = os.path.join(cluster_dir, shard, "modoverrides.lua")
+        write_text = server_configs.get("ModOverrides")
+        with open(write_fp, mode="w", encoding="utf-8") as file:
+            file.write(write_text)
+
+def ensure_mods(
+    mod_ids: list[str],
+    steam_mods_path: str,
+) -> None:
+    """
+    Ensures that the `dedicated_server_mods_setup.lua` file at the **steam_mods_path** contains all the
+    mod ids provided. If not, then they will be added to the file.
+
+    Each mod id must have a corresponding `ServerModSetup("<id>")` line in the file.
+
+    Parameters
+    ----------
+    mod_ids: list[str]
+        A list of workshop ids for the mods that must exist at the `dedicated_server_mods_setup.lua` file.
+    steam_mods_path: str
+        The directory that must contain the `dedicated_server_mods_setup.lua` file.
+    """
+
+    mod_setup_file = Path(steam_mods_path) / "dedicated_server_mods_setup.lua"
+    valid_id = re.compile(r"^[0-9]{6,12}$")
+
+    cleaned_ids: list[str] = []
+    for mod_id in mod_ids:
+        mod_id = mod_id.strip()
+        if not valid_id.match(mod_id):
+            raise ValueError(
+                f"Invalid workshop ID: {mod_id!r} (must be 6-12 digits)"
+            )
+        cleaned_ids.append(mod_id)
+
+    existing = ""
+    if mod_setup_file.exists():
+        existing = mod_setup_file.read_text(encoding="utf-8")
+
+    missing_lines: list[str] = []
+    for mod_id in cleaned_ids:
+        line = f'ServerModSetup("{mod_id}")'
+        if line not in existing:
+            missing_lines.append(line)
+    
+    if not missing_lines:
+        logger.info(f" All {len(cleaned_ids)} mods already present in {mod_setup_file}")
+        return
+
+    mod_setup_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with mod_setup_file.open("a", encoding="utf-8") as f:
+        for line in missing_lines:
+            f.write(line + "\n")
+
+    print(f"🧩 Added {len(missing_lines)} new mod(s) to {mod_setup_file}")
+
+def debug_start() -> None:
+    """
+    Starts the dedicated server using hardcoded filepaths. Used for testing purposes only.
+    """
+    cluster_dir = r"C:\Users\ofsys\Documents\Klei\DoNotStarveTogether\TestWorld"
+    nullrender_fp = r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe"
+    static_dir = r"C:\Users\ofsys\Documents\Code\FullStack\ranked-dst\backend\static"
+
     os.makedirs(cluster_dir, exist_ok=True)
 
     cluster_ini_src = os.path.join(static_dir, "cluster.ini")
@@ -91,10 +282,8 @@ def start_dedicated_server(
 
             write_fp = os.path.join(shard_cluster, file_name)
             shutil.copy2(static_fp, write_fp)
-    
-    print(f"Created cluster directory at:\n\t'{cluster_dir}'!")
+            
     cluster_name = os.path.basename(cluster_dir)
-
     master_process = launch_shard(
         nullrender_fp=nullrender_fp,
         shard="Master",
@@ -107,16 +296,5 @@ def start_dedicated_server(
         cluster_name=cluster_name
     )
 
-    print("Launched both master and caves!")
-
-    try:
-        # Block until either process exits
-        master_process.wait()
-        caves_process.wait()
-    except KeyboardInterrupt:
-        print("\nStopping servers...")
-        master_process.terminate()
-        caves_process.terminate()
-
-def stop_dedicated_server():
-    pass
+    SERVER_MANAGER.set(master_process, caves_process)
+    logger.info("Launched both master and caves!")

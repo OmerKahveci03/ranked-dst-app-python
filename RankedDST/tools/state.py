@@ -24,14 +24,26 @@ def get_match_state() -> str:
     """
     return match_state
 
-def set_match_state(new_state: str) -> None:
+def set_match_state(new_state: str, window: webview.Window) -> None:
     """
     Mutates the global match_state variable.
+
+    Parameters
+    ----------
+    new_state: str
+        The state to change the global match_state variable to
+    window: webview.Window
+        The webview window object to evaluate the javascript function for
     """
+
     if new_state not in valid_match_states:
         raise ValueError(f"Match state invalid. Recieved: {new_state}\n\tMust be in {valid_match_states}")
+    
     global match_state
+    print( f"Changing match state to {new_state}")
+    window.evaluate_js(f"matchStateChanged({json.dumps(new_state)})")
     match_state = new_state
+
 
 # -------------------- CONNECTION STATE -------------------- #
 ConnectionConnected = "connected"

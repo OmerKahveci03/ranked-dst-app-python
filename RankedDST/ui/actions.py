@@ -8,7 +8,8 @@ The methods of this class are called by the javascript functions under resources
 
 import RankedDST.ui.handlers as handlers
 
-# from RankedDST.networking.socket import connect_websocket
+from RankedDST.dedicated_server.world_launcher import debug_start, stop_dedicated_server
+
 from RankedDST.tools.state import get_user_data, set_user_data, DEVELOPING
 from RankedDST.tools.config import save_data
 
@@ -29,3 +30,9 @@ class UIActions:
         save_data({secret_key: new_secret})
 
         # connect_websocket()
+
+    def start_server_button(self) -> None:
+        debug_start()
+
+    def stop_server_button(self) -> None:
+        stop_dedicated_server()

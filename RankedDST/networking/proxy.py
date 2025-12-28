@@ -11,6 +11,10 @@ import requests
 import json
 
 import RankedDST.tools.state as state
+from RankedDST.tools.secret import hash_string
+from RankedDST.tools.logger import logger
+
+from RankedDST.ui.window import get_window
 
 
 def _backend_url() -> str:
@@ -21,8 +25,8 @@ def _backend_url() -> str:
 
 def _forward_to_backend(endpoint: str, payload: dict) -> Response:
     # Inject secret hash
-    raw_secret = state.GetKleiSecret()
-    payload["klei_secret_hash"] = state.HashString(raw_secret)
+    raw_secret = state.get_user_data("klei_secret")
+    payload["klei_secret_hash"] = hash_string(raw_secret)
 
     try:
         resp = requests.post(
@@ -70,16 +74,17 @@ def create_proxy() -> Flask:
         if not payload:
             return {"error": "invalid json"}, 400
 
-        print(
-            f"[day_reached] klei_id={payload.get('klei_id')} "
-            f"day={payload.get('day')} "
-            f"character={payload.get('character')} "
-            f"seed={payload.get('seed')}"
-        )
+        logger.info(f"""
+            [day_reached] 
+            \n\tklei_id={payload.get('klei_id')}
+            \n\tday={payload.get('day')}
+            \n\tcharacter={payload.get('character')} 
+            \n\tseed={payload.get('seed')}
+        """)
 
         if state.get_match_state() == state.MatchWorldReady:
-            state.set_match_state(state.MatchInProgress)
-            print("  Player has started their run!")
+            state.set_match_state(state.MatchInProgress, get_window())
+            logger.info("  Player has started their run!")
 
         return _forward_to_backend("/day_reached", payload)
 
@@ -89,12 +94,13 @@ def create_proxy() -> Flask:
         if not payload:
             return {"error": "invalid json"}, 400
 
-        print(
-            f"[flare_used] klei_id={payload.get('klei_id')} "
-            f"day={payload.get('day')} "
-            f"character={payload.get('character')} "
-            f"seed={payload.get('seed')}"
-        )
+        logger.info(f"""
+            [flare_used] 
+            \n\tklei_id={payload.get('klei_id')} 
+            \n\tday={payload.get('day')}
+            \n\tcharacter={payload.get('character')} 
+            \n\tseed={payload.get('seed')}
+        """)
 
         return _forward_to_backend("/flare_used", payload)
 
@@ -104,11 +110,13 @@ def create_proxy() -> Flask:
         if not payload:
             return {"error": "invalid json"}, 400
 
-        print(
-            f"[boss_killed] klei_id={payload.get('klei_id')} "
-            f"boss={payload.get('boss_name')} "
-            f"day={payload.get('day')}"
-        )
+
+        logger.info(f"""
+            [boss_killed] 
+            \n\tklei_id={payload.get('klei_id')} 
+            \n\tday={payload.get('day')}
+            \n\tboss={payload.get('boss_name')}
+        """)
 
         return _forward_to_backend("/boss_killed", payload)
 
@@ -118,11 +126,12 @@ def create_proxy() -> Flask:
         if not payload:
             return {"error": "invalid json"}, 400
 
-        print(
-            f"[player_died] klei_id={payload.get('klei_id')} "
-            f"death_cause={payload.get('death_cause')} "
-            f"day={payload.get('day')}"
-        )
+        logger.info(f"""
+            [player_died] 
+            \n\tklei_id={payload.get('klei_id')}  
+            \n\tday={payload.get('day')}
+            \n\tdeath_cause={payload.get('death_cause')} 
+        """)
 
         return _forward_to_backend("/player_died", payload)
 
@@ -132,11 +141,12 @@ def create_proxy() -> Flask:
         if not payload:
             return {"error": "invalid json"}, 400
 
-        print(
-            f"[player_revived] klei_id={payload.get('klei_id')} "
-            f"revive_method={payload.get('revive_method')} "
-            f"day={payload.get('day')}"
-        )
+        logger.info(f"""
+            [player_revived] 
+            \n\tklei_id={payload.get('klei_id')}  
+            \n\tday={payload.get('day')}
+            \n\revive_method={payload.get('revive_method')} 
+        """)
 
         return _forward_to_backend("/player_revived", payload)
 
@@ -149,7 +159,7 @@ def start_proxy_server(host: str, port: int) -> None:
     """
     proxy_app = create_proxy()
 
-    print(f"🌐 Proxy listening on {host}:{port}")
+    logger.info(f"🌐 Proxy listening on {host}:{port}")
     proxy_app.run(
         host=host, 
         port=port, 

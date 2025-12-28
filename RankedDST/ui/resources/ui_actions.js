@@ -30,3 +30,21 @@ function saveKleiSecret() {
 
     // pause the ui or something
 }
+
+function onStartServerClicked() {
+    if (!window.pywebview) {
+        console.error("pywebview not ready");
+        return
+    }
+    
+    window.pywebview.api.start_server_button();
+}
+
+function onStopServerClicked() {
+    if (!window.pywebview) {
+        console.error("pywebview not ready");
+        return
+    }
+    
+    window.pywebview.api.stop_server_button();
+}

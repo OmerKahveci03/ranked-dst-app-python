@@ -12,18 +12,24 @@ from pathlib import Path
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
-log_file = LOG_DIR / f"{datetime.now().date()}.log"
+def initialize_logger(name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
 
-logger = logging.getLogger("app")
+    log_file = LOG_DIR / f"{datetime.now().date()}-{name}.log"
 
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        logger.setLevel(logging.INFO)
 
-    fh = logging.FileHandler(log_file, encoding="utf-8")
+        fh = logging.FileHandler(log_file, encoding="utf-8")
 
-    fmt = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] %(name)s: %(message)s"
-    )
-    fh.setFormatter(fmt)
+        fmt = logging.Formatter(
+            "[%(asctime)s] [%(levelname)s]: %(message)s"
+        )
+        fh.setFormatter(fmt)
 
-    logger.addHandler(fh)
+        logger.addHandler(fh)
+
+    return logger
+
+logger = initialize_logger("app")
+server_logger = initialize_logger("dedi-server")
