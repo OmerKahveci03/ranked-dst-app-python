@@ -8,11 +8,22 @@
 :root {
     --klei: "BelisaPlumilla";
 
-    --primary: #1f1f1f;
-    --secondary: #daa520;
+    /* --primary: #1f1f1f;
+    --secondary: #daa520; */
     --tertiary: #ffffff;
 
-    --primaryGradient: linear-gradient(144deg, #000000 5%, var(--primary) 50%, #000000 95%);
+    /* --primaryDark: #000000;
+    --secondaryDark: #956b00; */
+
+    --primary: #daa520;
+    --secondary: #1f1f1f;
+
+    --primaryDark: #956b00;
+    --secondaryDark: #000000;
+
+    --primaryGradient: linear-gradient(144deg, var(--primaryDark) 5%, var(--primary) 50%, var(--primaryDark) 95%);
+    --secondaryGradient: linear-gradient(150deg, var(--secondaryDark) 5%, var(--secondary) 50%, var(--secondaryDark) 95%);
+    --secondaryGradientAlt: linear-gradient(27deg, var(--secondaryDark) 13%, var(--secondary) 70%, var(--secondaryDark) 95%);
 }
 
 body {
@@ -20,7 +31,7 @@ body {
     font-family: var(--klei), sans-serif;
     background: var(--primaryGradient);
     
-    color: #eee;
+    color: var(--tertiary);
 
     display: flex;
     flex-direction: column;
@@ -30,29 +41,10 @@ body {
     width: 100%;
 }
 
-.button {
-    font-family: var(--klei);
-    font-size: 24px;
-    color: var(--tertiary);
-
-    border: 2px solid var(--tertiary);
-    border-radius: 6px;
-
-    padding: 25px;
-
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover{
-        font-size: 28px;
-        color: var(--secondary);
-    }
-}
-
 #header {
     width: 100%;
 
-    background-color: var(--secondary);
+    background: var(--secondaryGradient);
 
     height: 70px;
 
@@ -72,36 +64,92 @@ body {
         display: flex;
         justify-content: space-around;
         align-items: center;
+
+        #status-section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            font-size: 20px;
+        }
+
+        #user-section {
+            height: 100%;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-size: 28px;
+        }
     }
 
-    #klei-secret-section {
+    #not-connected-section {
         display: flex;
         justify-content: center;
         align-items: center;
         padding: 10px;
 
-        background-color: var(--tertiary);
+        gap: 20px;
 
-        #klei-secret-button {
-            font-family: var(--klei);
-            font-size: 24px;
-            color: var(--primary);
+        /* background-color: var(--tertiary); */
 
+        #klei-secret-input {
+            border: 2px solid var(--primary);
+            color: var(--secondaryDark);
             background-color: var(--tertiary);
 
-            border: 2px solid var(--primary);
             border-radius: 6px;
 
-            padding: 10px;
+            font-family: sans-serif;
+            font-size: 12px;
+            text-align: center;
 
-            cursor: pointer;
-            transition: all 0.2s ease;
+            outline: none;
 
-            &:hover{
-                color: var(--tertiary);
+            width: 100px;
+            padding: 10px 0px;
+
+            max-height: 30px;
+
+            transition: border-color 0.2s ease;
+
+            &:focus {
+                border-color: var(--tertiary);
+                color: var(--secondaryDark);
                 background-color: var(--primary);
-                border: 2px solid var(--tertiary);
             }
+
+            &::placeholder {
+                font-size: 16px;
+                font-family: var(--klei);
+                color: var(--secondary)
+            }
+        }
+    }
+
+    .header-button {
+        font-family: var(--klei);
+        font-size: 28px;
+        color: var(--tertiary);
+
+        background-color: var(--primary);
+
+        border: 2px solid var(--tertiary);
+        border-radius: 6px;
+
+        padding: 2px 12px;
+        max-height: 30px;
+
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover{
+            color: var(--primary);
+            background-color: var(--tertiary);
+            border: 2px solid var(--primary);
         }
     }
 }
@@ -110,9 +158,40 @@ body {
     width: 100%;
     height: 100%;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    .button {
+        font-family: var(--klei);
+        font-size: 24px;
+        color: var(--tertiary);
 
-    gap: 30px;
+        border: 2px solid var(--tertiary);
+        border-radius: 6px;
+
+        padding: 25px;
+
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover{
+            font-size: 28px;
+            color: var(--secondary);
+        }
+    }
+
+    #connected-main {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        gap: 30px;
+    }
+}
+
+#footer {
+    width: 100%;
+    height: 40px;
+
+    background: var(--secondaryGradientAlt);
 }

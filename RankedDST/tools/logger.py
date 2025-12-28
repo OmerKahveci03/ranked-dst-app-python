@@ -29,6 +29,10 @@ def initialize_logger(name: str) -> logging.Logger:
 
         logger.addHandler(fh)
 
+        ch = logging.StreamHandler()
+        ch.setFormatter(fmt)
+        logger.addHandler(ch)
+
     return logger
 
 logger = initialize_logger("app")

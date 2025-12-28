@@ -60,7 +60,7 @@ def get_connection_state() -> str:
     """
     return connection_state
 
-def set_connection_state(new_state: str, window: webview.Window) -> None:
+def set_connection_state(new_state: str, window: webview.Window | None = None) -> None:
     """
     Mutates the global connection_state variable. Calls the `connectionStateChanged` javascript function
     for the window object with the new_state as the parameter.
@@ -69,15 +69,17 @@ def set_connection_state(new_state: str, window: webview.Window) -> None:
     ----------
     new_state: str
         The state to change the global connection_state variable to
-    window: webview.Window
-        The webview window object to evaluate the javascript function for
+    window: webview.Window (default None)
+        The webview window object to evaluate the javascript function for. Can be omitted, but
+        shouldn't unless another javascript function is modifying the UI.
     """
     if new_state not in valid_connection_states:
         raise ValueError(f"Connection state invalid. Recieved: {new_state}\n\tMust be in {valid_connection_states}")
     
     global connection_state
     print( f"Changing connection state to {new_state}")
-    window.evaluate_js(f"connectionStateChanged({json.dumps(new_state)})")
+    if window is not None:
+        window.evaluate_js(f"connectionStateChanged({json.dumps(new_state)})")
     connection_state = new_state
 
 
@@ -125,7 +127,7 @@ def get_user_data(get_key: str | None = None) -> dict[str, str | None] | str | N
 
     return global_user_data.get(get_key, None)
 
-def set_user_data(new_values: dict[str, str | None], overwrite: bool = False) -> None:
+def set_user_data(new_values: dict[str, str | None], window: webview.Window | None = None, overwrite: bool = False) -> None:
     """
     Set the user data to be equal to the new values. If overwrite is false, then only modify the
     keys provided.
@@ -155,3 +157,11 @@ def set_user_data(new_values: dict[str, str | None], overwrite: bool = False) ->
 
     for key, value in new_values.items():
         global_user_data[key] = value
+
+    # Update UI if possible
+    if not window:
+        return
+
+    username = new_values.get('username', None)
+    if username:
+        window.evaluate_js(f"setUserData({json.dumps(username)})")

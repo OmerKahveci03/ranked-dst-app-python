@@ -13,14 +13,15 @@
     </div>
 
     <!-- Not Connected -->
-    <div id="klei-secret-section">
+    <div id="not-connected-section">
       <input
         id="klei-secret-input"
+        class="header-button"
         type="password"
         placeholder="Enter Klei Secret"
         autocomplete="off"
       />
-      <div id="klei-secret-button" onclick="saveKleiSecret()">Save</div>
+      <div id="klei-secret-button" class="header-button" onclick="saveKleiSecret()">Save</div>
     </div>
 
     <!-- Connecting -->
@@ -30,18 +31,34 @@
 
     <!-- Connected -->
     <div id="connected-section">
-      <div class="connection-status">Connected</div>
-      <div id="match-status"></div>
+      <div id="status-section">
+        <div class="connection-status">Connected</div>
+        <div id="match-status"></div>
+      </div>
+      <div id="user-section">
+        <div id="user-name"></div>
+      </div>
+      <div id="logout-button" class="header-button" onclick="onLogoutClicked()">
+        Logout
+      </div>
     </div>
   </div>
   <div id="main-body">
-    <h1 id="greeting">Hello Ranked DST 👋</h1>
-    <div class="button" onclick="onPress()">Press Me</div>
+    <div id="no-server-main"></div>
+    <div id="not-connected-main"></div>
+    <div id="connecting-main"></div>
+    <div id="connected-main">
+      <div class="button" onclick="onPress()">Press Me</div>
 
-    <div class="button" onclick="onStartServerClicked()">Start Server</div>
-    <div class="button" onclick="onStopServerClicked()">Stop Server</div>
+      <div class="button" onclick="onStartServerClicked()">Start Server</div>
+      <div class="button" onclick="onStopServerClicked()">Stop Server</div>
+    </div>
   </div>
-  <script src="./ui_actions.js"></script>
-  <script src="./ui_updates.js"></script>
+  
+  <div id="footer">
+
+  </div>
+  <script type="module" src="./ui_actions.js"></script>
+  <script type="module" src="./ui_updates.js"></script>
 </body>
 </html>

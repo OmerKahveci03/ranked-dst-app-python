@@ -6,10 +6,10 @@
 
 // The list of elements to display for the given connection state
 const connectionStateElements = {
-    not_connected: ["klei-secret-section"],
-    no_server: ["no-connection-section"],
-    connecting: ["connecting-section"],
-    connected: ["connected-section"],
+    not_connected: ["not-connected-section", "not-connected-main"],
+    no_server: ["no-connection-section", "no-server-main"],
+    connecting: ["connecting-section", "connecting-main"],
+    connected: ["connected-section", "connected-main"],
 }
 
 // Hides all elements for the state map (excluding the ones for the newState)
@@ -46,3 +46,17 @@ function matchStateChanged(newState) {
 function dediPathStateChanged() {
     
 }
+
+
+function setUserData(username) {
+    const usernameElement = document.getElementById("user-name");
+
+    usernameElement.textContent = `Logged in as ${username}`;
+}
+
+// Expose this to the window
+window.connectionStateChanged = connectionStateChanged;
+window.setUserData = setUserData;
+window.matchStateChanged = matchStateChanged;
+
+export { connectionStateChanged, setUserData }

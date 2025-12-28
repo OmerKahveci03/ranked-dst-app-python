@@ -3,7 +3,7 @@
 
     They are called from actions such as button clicks or form fillouts
 */
-
+import { connectionStateChanged, setUserData } from "./ui_updates.js";
 
 function onPress() {
     if (!window.pywebview) {
@@ -48,3 +48,24 @@ function onStopServerClicked() {
     
     window.pywebview.api.stop_server_button();
 }
+
+function onLogoutClicked() {
+    if (!window.pywebview) {
+        console.error("pywebview not ready");
+        return;
+    }
+    
+    // This is state.ConnectionNotConnected
+    connectionStateChanged("not_connected");
+
+    setUserData("");
+
+    window.pywebview.api.logout_button();
+}
+
+// Expose this to the window
+window.onPress = onPress;
+window.saveKleiSecret = saveKleiSecret;
+window.onStartServerClicked = onStartServerClicked;
+window.onStopServerClicked = onStopServerClicked;
+window.onLogoutClicked = onLogoutClicked;
