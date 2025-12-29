@@ -6,10 +6,9 @@ This module contains the UIActions class; an instance of which is passed into th
 The methods of this class are called by the javascript functions under resources/ui_actions.js
 """
 
-import RankedDST.ui.handlers as handlers
-
 from RankedDST.dedicated_server.world_launcher import debug_start, stop_dedicated_server
 
+from RankedDST.tools.logger import logger
 import RankedDST.tools.state as state
 from RankedDST.tools.config import save_data
 
@@ -23,7 +22,7 @@ class UIActions:
         self._disconnect_socket = socket_disconnect_func
 
     def test_button(self) -> None:
-        handlers.test_button()
+        logger.info("Button was pressed")
 
     def save_klei_secret(self, new_secret: str) -> None:
         """
@@ -48,8 +47,4 @@ class UIActions:
         Disconnects the websocket connection and changes state to not connected.
         """
         stop_dedicated_server()
-
-        state.set_user_data(new_values={"user_id" : None, "username" : None, "match_id" : None})
-        state.set_connection_state(new_state=state.ConnectionNotConnected)
-
         self._disconnect_socket()

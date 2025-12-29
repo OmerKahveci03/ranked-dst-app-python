@@ -2,7 +2,7 @@ import webview
 import os
 import sys
 
-
+from RankedDST.tools.logger import logger
 from RankedDST.ui.actions import UIActions
 
 window_object: webview.Window | None = None
@@ -17,7 +17,7 @@ def resource(path: str) -> str:
 
     Otherwise simply returns the path.
     """
-    print(f"Resource got path: {path}")
+    logger.info(f"Resource got path: {path}")
     if hasattr(sys, "_MEIPASS"):
         return os.path.join(sys._MEIPASS, path)
     return os.path.abspath(path)

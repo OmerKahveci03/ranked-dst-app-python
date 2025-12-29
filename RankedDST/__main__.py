@@ -3,7 +3,7 @@ import threading
 from RankedDST.ui.window import create_window, get_window
 
 from RankedDST.networking.proxy import start_proxy_server
-from RankedDST.networking.socket import start_socket_loop, connect_websocket, disconnect_websocket
+from RankedDST.networking.socket import connect_websocket, disconnect_websocket
 
 from RankedDST.tools.config import load_initial_state
 from RankedDST.tools.logger import logger

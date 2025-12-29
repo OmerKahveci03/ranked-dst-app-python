@@ -43,10 +43,6 @@ function matchStateChanged(newState) {
     matchStatusElement.textContent = newState
 }
 
-function dediPathStateChanged() {
-    
-}
-
 
 function setUserData(username) {
     const usernameElement = document.getElementById("user-name");
@@ -59,4 +55,4 @@ window.connectionStateChanged = connectionStateChanged;
 window.setUserData = setUserData;
 window.matchStateChanged = matchStateChanged;
 
-export { connectionStateChanged, setUserData }
+export { connectionStateChanged, setUserData, matchStateChanged }

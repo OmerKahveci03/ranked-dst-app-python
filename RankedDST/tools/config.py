@@ -2,6 +2,7 @@ import os, json
 import webview
 
 from RankedDST.tools import state
+from RankedDST.tools.logger import logger
 
 CONFIG_KEYS = ["klei_secret_dev", "klei_secret", "dedicated_server_path"]
 
@@ -60,22 +61,22 @@ def load_initial_state(window: webview.Window) -> None:
     Loads the ~/home/.ranked_dst/config.json file and reads the data found.
     """
 
-    print("Loading initial state...")
+    logger.info("Loading initial state...")
     config_fp = get_config_path()
     with open(config_fp, "r", encoding="utf-8") as file:
         config_data: dict[str, str] = json.load(file)
-        print(f"Read {config_data} into config data!")
+        logger.info(f"Read {config_data} into config data!")
 
     secret_key = "klei_secret_dev" if state.DEVELOPING else "klei_secret"
 
     klei_secret = config_data.get(secret_key, None)
     if klei_secret:
-        print(f"Klei secret was stored as {klei_secret}")
+        logger.info(f"Klei secret was stored as {klei_secret}")
         state.set_user_data({"klei_secret" : klei_secret})
     else:
-        print("No klei secret was stored.")
+        logger.info("No klei secret was stored.")
 
-    print(f"User data state is now: {state.get_user_data()}")
+    logger.info(f"User data state is now: {state.get_user_data()}")
 
     state.set_match_state(state.MatchNone, window=window)
     state.set_connection_state(state.ConnectionNotConnected, window=window)  # might want to remove this actually

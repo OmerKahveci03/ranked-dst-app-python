@@ -6,14 +6,17 @@ The source of truth for the project's state.
 import webview
 import json
 
+from RankedDST.tools.logger import logger
+from RankedDST.ui.updates import update_match_state, update_connection_state, update_user_data
+
 DEVELOPING = True
 
 # -------------------- MATCH STATE -------------------- #
-MatchNone = "no_match"
+MatchNone = "no_match" # You are not in a live match
 MatchWorldGenerating = "world_generating"
 MatchWorldReady = "world_ready"
-MatchInProgress = "in_progress"
-MatchCompleted = "completed"
+MatchInProgress = "in_progress" # You are in the world while the match is live
+MatchCompleted = "completed" # Your run is over but the match is still live so you are waiting for the others to finish
 
 valid_match_states = [MatchNone, MatchWorldGenerating, MatchWorldReady, MatchInProgress, MatchCompleted]
 match_state = MatchNone
@@ -24,7 +27,7 @@ def get_match_state() -> str:
     """
     return match_state
 
-def set_match_state(new_state: str, window: webview.Window) -> None:
+def set_match_state(new_state: str, window: webview.Window | None = None) -> None:
     """
     Mutates the global match_state variable.
 
@@ -32,7 +35,7 @@ def set_match_state(new_state: str, window: webview.Window) -> None:
     ----------
     new_state: str
         The state to change the global match_state variable to
-    window: webview.Window
+    window: webview.Window (default None)
         The webview window object to evaluate the javascript function for
     """
 
@@ -40,8 +43,8 @@ def set_match_state(new_state: str, window: webview.Window) -> None:
         raise ValueError(f"Match state invalid. Recieved: {new_state}\n\tMust be in {valid_match_states}")
     
     global match_state
-    print( f"Changing match state to {new_state}")
-    window.evaluate_js(f"matchStateChanged({json.dumps(new_state)})")
+    logger.info( f"Changing match state to {new_state}")
+    update_match_state(new_state=new_state, window=window)
     match_state = new_state
 
 
@@ -77,9 +80,8 @@ def set_connection_state(new_state: str, window: webview.Window | None = None) -
         raise ValueError(f"Connection state invalid. Recieved: {new_state}\n\tMust be in {valid_connection_states}")
     
     global connection_state
-    print( f"Changing connection state to {new_state}")
-    if window is not None:
-        window.evaluate_js(f"connectionStateChanged({json.dumps(new_state)})")
+    logger.info( f"Changing connection state to {new_state}")
+    update_connection_state(new_state=new_state, window=window)
     connection_state = new_state
 
 
@@ -163,5 +165,4 @@ def set_user_data(new_values: dict[str, str | None], window: webview.Window | No
         return
 
     username = new_values.get('username', None)
-    if username:
-        window.evaluate_js(f"setUserData({json.dumps(username)})")
+    update_user_data(username=username, window=window)

@@ -3,7 +3,7 @@
 
     They are called from actions such as button clicks or form fillouts
 */
-import { connectionStateChanged, setUserData } from "./ui_updates.js";
+import { connectionStateChanged, setUserData, matchStateChanged } from "./ui_updates.js";
 
 function onPress() {
     if (!window.pywebview) {
@@ -57,6 +57,9 @@ function onLogoutClicked() {
     
     // This is state.ConnectionNotConnected
     connectionStateChanged("not_connected");
+
+    // This is state.MatchNone
+    matchStateChanged("no_match");
 
     setUserData("");
 

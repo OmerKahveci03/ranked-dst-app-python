@@ -33,9 +33,14 @@ def connect_websocket() -> socketio.Client | None:
     """
     Attempts to establish a socketio websocket connection. The user_data's klei secret
     is obtained, hashed, then used for authentication.
+
+    Returns
+    -------
+    client_socket: socketio.Client
+        The global socketio client object.
     """
     logger.info("Connecting websocket...")
-    reached_backend = False
+    auth_fail: bool = False
 
     global client_socket
     window_object = get_window()
@@ -58,8 +63,6 @@ def connect_websocket() -> socketio.Client | None:
 
     hashed = hash_string(raw_secret)
 
-    logger.info("🔌 Connecting Socket.IO client...")
-
     client_socket = socketio.Client(
         reconnection=True,
         reconnection_attempts=0,  # infinite
@@ -70,18 +73,29 @@ def connect_websocket() -> socketio.Client | None:
 
     @client_socket.on("connect", namespace="/proxy")
     def connect_proxy():
-        nonlocal reached_backend
-        reached_backend = True
+        """
+        Built in socketio event. Triggers after the initial connection succeeds, which means that
+        connection_accepted has already triggered. Therefore the in-memory user_data state is now
+        populated.
+
+        If match_id is not none in state.user_data, then the `request_world_files` event is emitted.
+        """
+
+        logger.info("On connect proxy")
+        nonlocal auth_fail
+        if auth_fail:
+            logger.info("⚠️ Auth Failed so Disconnecting ⚠️")
+            return
         logger.info("✅ Socket.IO connected to /proxy")
         state.set_connection_state(state.ConnectionConnected, window_object)
 
         match_id = state.get_user_data("match_id")
         if not match_id:
-            print("Not in a match")
+            logger.info("Not in a match")
             state.set_match_state(state.MatchNone, window_object)
             return
         
-        print("In a match! Requesting world files!")
+        logger.info("In a match! Requesting world files!")
         client_socket.emit(
             "request_world_files",
             {
@@ -93,23 +107,48 @@ def connect_websocket() -> socketio.Client | None:
 
     @client_socket.on("disconnect", namespace="/proxy")
     def on_proxy_disconnect():
-        if not reached_backend:
-            logger.info("❌ Never reached backend — server likely down")
-            state.set_connection_state(state.ConnectionServerDown, window_object)
-        else:
-            logger.info("⚠️ Disconnected from server")
-            state.set_connection_state(state.ConnectionNotConnected, window_object)
-        state.set_match_state(state.MatchNone, window_object)
+        """
+        Built in socketio event. Called when the `disconnect()` method for the socketio Client object
+        is invoked. No error is raised.
+
+        Will reset all user/connection/match state to the default.
+        """
+
+        logger.info(f"🛜 Proxy disconnect 🛜")
+        state.set_user_data(new_values={"user_id" : None, "username" : None, "match_id" : None, "klei_secret" : None})
+        state.set_connection_state(new_state=state.ConnectionNotConnected, window=window_object)
+        state.set_match_state(new_state=state.MatchNone, window=window_object)
 
     @client_socket.on("connect_error", namespace="/proxy")
     def on_connect_error(data):
-        nonlocal reached_backend
-        reached_backend = True
-        logger.info(f"❌ Connect error (server reachable): {data}")
-        state.set_connection_state(state.ConnectionNotConnected, window_object)
+        """
+        Built in socketio event. Raises an error when something goes wrong on the transport level.
+
+        Sets the connection state to `state.ConnectionServerDown`.
+        """
+
+        logger.info(f"❌ Connect error: {type(data)} - {data}")
+        state.set_connection_state(new_state=state.ConnectionServerDown, window=window_object)
 
     @client_socket.on("connection_accepted", namespace="/proxy")
     def on_connection_accepted(data):
+        """
+        Defined by us. Emitted by the backend if the hashed klei secret is approved on connection.
+
+        Provides user data.
+
+        Payload
+        -------
+        user_id: str
+            The user id of the user.
+        username: str
+            The username for the user. Will be displayed on the UI
+        match_id : int | None
+            The match id of the live match the user is in. If the user in not in a live match, then None
+            is provided.
+        """
+
+        logger.info("On connection accepted")
         logger.info("✅ Auth successful")
 
         user_id = data.get("user_id")
@@ -124,6 +163,14 @@ def connect_websocket() -> socketio.Client | None:
     # Auth rejection
     @client_socket.on("connection_denied", namespace="/proxy")
     def on_connection_denied(_):
+        """
+        Defined by us. Emitted by the backend during initial connection if the provided hashed secret did
+        not exist in the database. Raises an error?
+        """
+
+        logger.info("On connection denied")
+        nonlocal auth_fail
+        auth_fail = True
         logger.info("❌ Auth failed. Resetting secret + state.")
         state.set_user_data(
             new_values={"klei_secret": ""}, 
@@ -131,18 +178,17 @@ def connect_websocket() -> socketio.Client | None:
             overwrite=True
         )
         secret_key = "klei_secret_dev" if state.DEVELOPING else "klei_secret"
-        #save_data({secret_key : ""})
-        state.set_connection_state(state.ConnectionNotConnected, window_object)
+        save_data({secret_key : ""})
+        # state.set_connection_state(state.ConnectionNotConnected, window_object)
         client_socket.disconnect()
 
 
     @client_socket.on("generate_world", namespace="/proxy")
     def on_generate_world(data):
         logger.info("🎉 Received generate_world from backend")
-        state.set_match_state(new_state=state.MatchWorldGenerating, window=window_object)
         
         try:
-            start_dedicated_server(server_configs=data)
+            start_dedicated_server(server_configs=data, window=window_object, client_socket=client_socket)
         except Exception as e:
             logger.info(f"❌ Failed to launch dedicated server: {e}")
 
@@ -159,16 +205,16 @@ def connect_websocket() -> socketio.Client | None:
         state.set_match_state(state.MatchNone, window_object)
 
     try:
+        logger.info("🔌 Connecting Socket.IO client 🔌")
         client_socket.connect(
             _backend_url(),
             namespaces=["/proxy"],
             auth={"klei_secret_hash": hashed},
             transports=["websocket"],
         )
-        logger.info("Socket connection!")
     except Exception as e:
-        logger.info(f"❌ Socket connect failed: {e}")
-        # state.set_connection_state(state.ConnectionServerDown, window_object)
+        # Exceptions are raised for issues at the transport level
+        logger.info(f"❌ Socket connect failed: {type(e)} - {e}")
     return client_socket
 
 def disconnect_websocket() -> socketio.Client | None:
@@ -192,6 +238,7 @@ def disconnect_websocket() -> socketio.Client | None:
 
     return client_socket
 
+# To be deleted
 def start_socket_loop() -> None:
     """
     Creates a permanent blocking loop that tries to establish a websocket connection

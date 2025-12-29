@@ -10,144 +10,15 @@ import subprocess
 import shutil
 import time
 import threading
+import webview
+import socketio
 
 import RankedDST.tools.state as state
+from RankedDST.tools.secret import hash_string
 
 from pathlib import Path
 from RankedDST.tools.logger import logger, server_logger
 from RankedDST.dedicated_server.server_manager import SERVER_MANAGER
-
-def launch_shard(
-    nullrender_fp: str,
-    shard: str,
-    cluster_name: str
-) -> subprocess.Popen:
-    """
-    Uses the nullrenderer binary to launch a server; either the master or caves. The cluster_name folder
-    is expected to exist and the shard must be either 'Master' or 'Caves'
-
-    Parameters
-    ----------
-    nullrender_fp: str
-        The full path to the executable that launches and hosts the DST world.
-    shard: str
-        Determines the type of server to be launched. Must be either `'Master' or 'Caves'`
-    cluster_name: str
-        The folder name containing valid world files, such as cluster.ini, server.ini... etc.
-    """
-    assert shard in ["Master", "Caves"], "Shard must be 'Master' or 'Caves'"
-    logger.info(f" Launching {shard} Shard!")
-    cmd = [
-        nullrender_fp,
-        "-cluster", cluster_name,
-        "-shard", shard,
-    ]
-
-    proc = subprocess.Popen(
-        cmd,
-        cwd=os.path.dirname(nullrender_fp),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
-
-    def stream_output():
-        for line in proc.stdout:
-            server_logger.info("[%s] %s", shard, line.rstrip())
-
-    threading.Thread(target=stream_output, daemon=True).start()
-
-    return proc
-
-def start_dedicated_server(
-    server_configs: dict[str, str],
-    base_cluster_dir: str = r"C:\Users\ofsys\Documents\Klei\DoNotStarveTogether", # to do: dont make these default arguments
-    nullrender_fp: str = r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe",
-) -> None:
-    """
-    Parameters
-    ----------
-    base_cluster_dir: str
-        The directory for the cluster folder to be created in.
-    nullrender_fp: str
-        The full path to the executable that launches and hosts the DST world.
-    server_configs: dict[str, str]
-        A dictionary containing all files to be written. The key is the file type and the value is the
-        entire contents of the file. The 'MatchId' and 'ModIds' are also provided.
-
-        Expected keys: 
-        ```
-        "MatchId", "ModIds"
-        "ClusterIni", "MasterServerIni", "CavesServerIni",  # .ini files
-        "MasterWorldGenOverride", "CavesWorldGenOverride", "ModOverrides", # .lua files
-        ```
-    """
-    
-    assert os.path.exists(nullrender_fp), "Nullrender binary must exist"
-
-    if SERVER_MANAGER.is_running():
-        logger.info("⚠️ Dedicated server already running ⚠️")
-        return
-
-    match_id = server_configs.pop("MatchId")
-    mod_ids = server_configs.pop("ModIds")
-
-    cluster_name = f"Ranked DST Match {match_id}"
-    cluster_dir = os.path.join(base_cluster_dir, cluster_name)
-    create_cluster(cluster_dir=cluster_dir, server_configs=server_configs)
-
-    # to do: derive the mods path somehow
-    ensure_mods(mod_ids=mod_ids, steam_mods_path=r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\mods")
-
-    master_process = launch_shard(
-        nullrender_fp=nullrender_fp,
-        shard="Master",
-        cluster_name=cluster_name
-    )
-
-    caves_process = launch_shard(
-        nullrender_fp=nullrender_fp,
-        shard="Caves",
-        cluster_name=cluster_name
-    )
-
-    SERVER_MANAGER.set(master_process, caves_process)
-    logger.info("Launched both master and caves!")
-
-def stop_dedicated_server(timeout: float = 1.0):
-    if not SERVER_MANAGER.is_running:
-        logger.info("Dedicated server was not running. Nothing to shutdown.")
-        return
-    
-    logger.info("🛑 STOPPING DEDICATED SERVER 🛑")
-
-    with SERVER_MANAGER.lock:
-        processes = {
-            "master" : SERVER_MANAGER.master, 
-            "caves" : SERVER_MANAGER.caves
-        }
-
-    # Gracefully terminate
-    for shard, proc in processes.items():
-        if proc and proc.poll() is None:
-            logger.info(f"Gracefully terminating {shard} process")
-            proc.terminate()
-    
-    start = time.time()
-    while time.time() - start < timeout:
-        if all(proc.poll() is not None for proc in processes.values() if proc):
-            break
-        time.sleep(0.1)
-
-    # Force kill if needed
-    for shard, proc in processes.items():
-        if proc and proc.poll() is None:
-            logger.info(f"💀 Force killing {shard} shard 💀")
-            proc.kill()
-
-    SERVER_MANAGER.clear()
-    logger.info("✅ Dedicated server stopped ✅")
 
 def create_cluster(
     cluster_dir: str,
@@ -255,7 +126,193 @@ def ensure_mods(
         for line in missing_lines:
             f.write(line + "\n")
 
-    print(f"🧩 Added {len(missing_lines)} new mod(s) to {mod_setup_file}")
+    logger.info(f"🧩 Added {len(missing_lines)} new mod(s) to {mod_setup_file}")
+
+
+def launch_shard(
+    nullrender_fp: str,
+    shard: str,
+    cluster_name: str,
+    window: webview.Window | None,
+    client_socket: socketio.Client | None
+) -> subprocess.Popen:
+    """
+    Uses the nullrenderer binary to launch a server; either the master or caves. The cluster_name folder
+    is expected to exist and the shard must be either 'Master' or 'Caves'
+
+    Parameters
+    ----------
+    nullrender_fp: str
+        The full path to the executable that launches and hosts the DST world.
+    shard: str
+        Determines the type of server to be launched. Must be either `'Master' or 'Caves'`
+    cluster_name: str
+        The folder name containing valid world files, such as cluster.ini, server.ini... etc.
+    window: webview.Window | None
+        The webview window object. Needed to update the UI when world state changes.
+    client_socket: socketio.Client | None
+        The global socketio object. Needed to emit events to the server when certain events take place.
+    """
+
+    assert shard in ["Master", "Caves"], "Shard must be 'Master' or 'Caves'"
+    logger.info(f" Launching {shard} Shard!")
+    cmd = [
+        nullrender_fp,
+        "-cluster", cluster_name,
+        "-shard", shard,
+    ]
+
+    proc = subprocess.Popen(
+        cmd,
+        cwd=os.path.dirname(nullrender_fp),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    SERVER_MANAGER.set_shard_status(shard=shard, status='launching')
+
+    def stream_output():
+        launched: bool = False
+        for line in proc.stdout:
+            server_logger.info("[%s] %s", shard, line.rstrip())
+
+            if not launched and "Sim paused" in line:
+                logger.info(f"The {shard} shard is launched!")
+                SERVER_MANAGER.set_shard_status(shard=shard, status='launched')
+                launched = True
+
+                master_status, caves_status = SERVER_MANAGER.get_shard_status()
+                if master_status == caves_status and master_status == 'launched':
+                    logger.info("Both shards are launched!")
+                    state.set_match_state(new_state=state.MatchWorldReady, window=window)
+            elif "Leave Announcement" in line:
+                if isinstance(client_socket, socketio.Client) and client_socket.connected and shard == 'Master': # Master shard to avoid duplicate emissions
+                    raw_secret = state.get_user_data("klei_secret")
+                    hashed = hash_string(raw_secret)
+
+                    logger.info("Player has left the world")
+                    client_socket.emit(
+                        "world_left",
+                        {"klei_secret_hash": hashed},
+                        namespace="/proxy"
+                    )
+                    state.set_match_state(new_state=state.MatchCompleted, window=window)
+                    stop_dedicated_server()
+
+    threading.Thread(target=stream_output, daemon=True).start()
+
+    return proc
+
+
+def start_dedicated_server(
+    server_configs: dict[str, str],
+    base_cluster_dir: str = r"C:\Users\ofsys\Documents\Klei\DoNotStarveTogether", # to do: dont make these default arguments
+    nullrender_fp: str = r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe",
+    window: webview.Window | None = None,
+    client_socket: socketio.Client | None = None,
+) -> None:
+    """
+    Parameters
+    ----------
+    base_cluster_dir: str
+        The directory for the cluster folder to be created in.
+    nullrender_fp: str
+        The full path to the executable that launches and hosts the DST world.
+    server_configs: dict[str, str]
+        A dictionary containing all files to be written. The key is the file type and the value is the
+        entire contents of the file. The 'MatchId' and 'ModIds' are also provided.
+
+        Expected keys: 
+        ```
+        "MatchId", "ModIds"
+        "ClusterIni", "MasterServerIni", "CavesServerIni",  # .ini files
+        "MasterWorldGenOverride", "CavesWorldGenOverride", "ModOverrides", # .lua files
+        ```
+    window: webview.Window (default None)
+        The webview window object. Needed to update the UI when world state changes.
+    client_socket: socketio.Client (default None)
+        The global socketio object. Needed to emit events to the server when certain events take place.
+    """
+    
+    assert os.path.exists(nullrender_fp), "Nullrender binary must exist"
+
+    if SERVER_MANAGER.is_running():
+        logger.info("⚠️ Dedicated server already running ⚠️")
+        return
+
+    match_id = server_configs.pop("MatchId")
+    mod_ids = server_configs.pop("ModIds")
+
+    cluster_name = f"Ranked DST Match {match_id}"
+    cluster_dir = os.path.join(base_cluster_dir, cluster_name)
+    create_cluster(cluster_dir=cluster_dir, server_configs=server_configs)
+
+    # to do: derive the mods path somehow
+    ensure_mods(mod_ids=mod_ids, steam_mods_path=r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\mods")
+
+    state.set_match_state(new_state=state.MatchWorldGenerating, window=window)
+    master_process = launch_shard(
+        nullrender_fp=nullrender_fp,
+        shard="Master",
+        cluster_name=cluster_name,
+        window=window,
+        client_socket=client_socket
+    )
+
+    caves_process = launch_shard(
+        nullrender_fp=nullrender_fp,
+        shard="Caves",
+        cluster_name=cluster_name,
+        window=window,
+        client_socket=client_socket
+    )
+
+    SERVER_MANAGER.set_subprocesses(master_process, caves_process)
+    logger.info("Launched both master and caves!")
+
+def stop_dedicated_server(timeout: float = 1.0) -> None:
+    """
+    Shuts down the dedicated server if up and updates match state.
+
+    Parameters
+    ----------
+    timeout: flaot (default 1.0)
+        The time in seconds to wait before force killing the processes.
+    """
+    if not SERVER_MANAGER.is_running:
+        logger.info("Dedicated server was not running. Nothing to shutdown.")
+        return
+    
+    logger.info("🛑 STOPPING DEDICATED SERVER 🛑")
+
+    with SERVER_MANAGER.lock:
+        processes = {
+            "Master" : SERVER_MANAGER.master, 
+            "Caves" : SERVER_MANAGER.caves
+        }
+
+    # Gracefully terminate
+    for shard, proc in processes.items():
+        if proc and proc.poll() is None:
+            logger.info(f"Gracefully terminating {shard} process")
+            proc.terminate()
+    
+    start = time.time()
+    while time.time() - start < timeout:
+        if all(proc.poll() is not None for proc in processes.values() if proc):
+            break
+        time.sleep(0.1)
+
+    # Force kill if needed
+    for shard, proc in processes.items():
+        if proc and proc.poll() is None:
+            logger.info(f"💀 Force killing {shard} shard 💀")
+            proc.kill()
+
+    SERVER_MANAGER.clear_subprocesses()
+    logger.info("✅ Dedicated server stopped ✅")
+
 
 def debug_start() -> None:
     """
@@ -287,14 +344,18 @@ def debug_start() -> None:
     master_process = launch_shard(
         nullrender_fp=nullrender_fp,
         shard="Master",
-        cluster_name=cluster_name
+        cluster_name=cluster_name,
+        window=None,
+        client_socket=None
     )
 
     caves_process = launch_shard(
         nullrender_fp=nullrender_fp,
         shard="Caves",
-        cluster_name=cluster_name
+        cluster_name=cluster_name,
+        window=None,
+        client_socket=None
     )
 
-    SERVER_MANAGER.set(master_process, caves_process)
+    SERVER_MANAGER.set_subprocesses(master_process, caves_process)
     logger.info("Launched both master and caves!")
