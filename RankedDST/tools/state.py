@@ -4,12 +4,40 @@ RankedDST/state.py
 The source of truth for the project's state.
 """
 import webview
-import json
 
 from RankedDST.tools.logger import logger
 from RankedDST.ui.updates import update_match_state, update_connection_state, update_user_data
 
 DEVELOPING = True
+
+# -------------------- NETWORKING STATE -------------------- #
+def route_url() -> str:
+    """
+    Returns the base url the backend exposes for all http requests.
+
+    Returns
+    -------
+    route_url: str 
+        The URL exposed by the backend for http requests.
+    """
+
+    if DEVELOPING:
+        return "http://localhost:5000"
+    return "https://dontgetlosttogether.com/api"
+
+def socket_url() -> str:
+    """
+    Returns the base url the backend exposes for the websocket connection
+
+    Returns
+    -------
+    socket_url: str 
+        The URL exposed by the backend for websocket connections.
+    """
+
+    if DEVELOPING:
+        return "http://localhost:5000"
+    return "https://dontgetlosttogether.com"
 
 # -------------------- MATCH STATE -------------------- #
 MatchNone = "no_match" # You are not in a live match

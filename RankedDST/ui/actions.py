@@ -40,7 +40,7 @@ class UIActions:
     def stop_server_button(self) -> None:
         stop_dedicated_server()
 
-    def logout_button(self) ->  None:
+    def logout_button(self) -> None:
         """
         Triggered when the `logout-button` is clicked on the UI's header.
 

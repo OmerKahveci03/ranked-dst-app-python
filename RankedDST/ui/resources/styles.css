@@ -5,6 +5,17 @@
     font-style: normal;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 :root {
     --klei: "BelisaPlumilla";
 
@@ -130,6 +141,11 @@ body {
         }
     }
 
+    #no-connection-section {
+        font-size: 30px;
+        color: #d13a3a;
+    }
+
     .header-button {
         font-family: var(--klei);
         font-size: 28px;
@@ -179,6 +195,57 @@ body {
 
     .wagstaff {
         height: 200px;
+    }
+
+    #no-server-main {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-around;
+
+        #bones {
+            width: 55vw;
+
+            animation: fadeIn 0.7s ease-out both;
+        }
+
+        #top-msg {
+            animation: fadeIn 0.5s ease-out both;
+            animation-delay: 1s;
+            font-size: 40px;
+        }
+
+        #bot-msg {
+            animation: fadeIn 0.5s ease-out both;
+            animation-delay: 1.8s;
+
+            font-size: 30px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            gap: 25px;
+            width: 100%;
+
+            #discord {
+                height: 60px;
+
+                cursor: pointer;
+
+                transition: all 0.2s ease-in;
+
+                &:hover{
+                    transform: scale(1.22) rotate(10deg);
+                }
+            }
+
+            #gramophone {
+                height: 60px;
+            }
+        }
     }
 
     #not-connected-main {

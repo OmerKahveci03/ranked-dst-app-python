@@ -17,11 +17,6 @@ from RankedDST.tools.logger import logger
 from RankedDST.ui.window import get_window
 
 
-def _backend_url() -> str:
-    if state.DEVELOPING:
-        return "http://localhost:5000"
-    return "https://dontgetlosttogether.com/api"
-
 
 def _forward_to_backend(endpoint: str, payload: dict) -> Response:
     # Inject secret hash
@@ -30,7 +25,7 @@ def _forward_to_backend(endpoint: str, payload: dict) -> Response:
 
     try:
         resp = requests.post(
-            _backend_url() + endpoint,
+            state.route_url() + endpoint,
             json=payload,
             timeout=5,
         )

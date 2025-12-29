@@ -23,12 +23,6 @@ from RankedDST.ui.window import get_window
 client_socket: socketio.Client | None = None
 
 
-def _backend_url() -> str:
-    if state.DEVELOPING:
-        return "http://localhost:5000"
-    return "https://dontgetlosttogether.com"
-
-
 def connect_websocket() -> socketio.Client | None:
     """
     Attempts to establish a socketio websocket connection. The user_data's klei secret
@@ -207,7 +201,7 @@ def connect_websocket() -> socketio.Client | None:
     try:
         logger.info("🔌 Connecting Socket.IO client 🔌")
         client_socket.connect(
-            _backend_url(),
+            state.socket_url(),
             namespaces=["/proxy"],
             auth={"klei_secret_hash": hashed},
             transports=["websocket"],
@@ -237,40 +231,3 @@ def disconnect_websocket() -> socketio.Client | None:
         logger.warning("Can't disconnect a connection that doesn't exist")
 
     return client_socket
-
-# To be deleted
-def start_socket_loop() -> None:
-    """
-    Creates a permanent blocking loop that tries to establish a websocket connection
-    if a klei secret is provided and the connection does not already exist.
-
-    Shouldn't be run on the main thread
-    """
-    last_secret = None
-
-    while True:
-        logger.debug("Start Socket Loop")
-        time.sleep(0.5)
-
-        if isinstance(client_socket, socketio.Client) and client_socket.connected:
-            logger.debug(" Socket is already connected...")
-            time.sleep(30)
-            continue
-
-        secret = state.get_user_data("klei_secret")
-        connection_state = state.get_connection_state()
-
-        if not secret or secret == last_secret:
-            logger.debug(f"This klei secret won't work: {secret}")
-            time.sleep(1)
-            continue
-        
-        logger.debug(f"Secret okay. Continuing with connection state: {connection_state}")
-        last_secret = secret
-
-        if connection_state == state.ConnectionServerDown:
-            logger.debug("Server is down. Will wait five seconds")
-            time.sleep(5)
-
-        connect_websocket()
-
