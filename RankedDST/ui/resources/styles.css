@@ -120,7 +120,7 @@ body {
 
             outline: none;
 
-            width: 100px;
+            width: 200px;
             padding: 10px 0px;
 
             max-height: 30px;
@@ -134,7 +134,7 @@ body {
             }
 
             &::placeholder {
-                font-size: 16px;
+                font-size: 22px;
                 font-family: var(--klei);
                 color: var(--secondary)
             }
@@ -211,13 +211,13 @@ body {
             animation: fadeIn 0.7s ease-out both;
         }
 
-        #top-msg {
+        #top-msg-no-server {
             animation: fadeIn 0.5s ease-out both;
             animation-delay: 1s;
             font-size: 40px;
         }
 
-        #bot-msg {
+        #bot-msg-no-server {
             animation: fadeIn 0.5s ease-out both;
             animation-delay: 1.8s;
 
@@ -254,7 +254,52 @@ body {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: space-around;
+
+        font-size: 36px;
+
+        #top-row-not-connected {
+            animation: fadeIn 0.5s ease-out both;
+            animation-delay: 0.5s;
+        }
+
+        #bot-row-not-connected {
+            animation: fadeIn 0.4s ease-out both;
+            animation-delay: 1.2s;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            gap: 15px;
+            max-width: 85%;
+
+            img {
+                max-height: 95px;
+            }
+
+            .label {
+                font-size: 36px;
+                text-wrap: balance;
+                text-align: center;
+
+                .clickable {
+                    font-weight: 600;
+                    color: var(--tertiary);
+
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+
+                    &:hover{
+                        color: var(--secondary);
+                        transform: scale(1.05);
+                    }
+                }
+            }
+        }
+        
     }
 
     #connected-main {

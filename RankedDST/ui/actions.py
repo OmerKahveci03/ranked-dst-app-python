@@ -5,6 +5,7 @@ This module contains the UIActions class; an instance of which is passed into th
 
 The methods of this class are called by the javascript functions under resources/ui_actions.js
 """
+import webbrowser
 
 from RankedDST.dedicated_server.world_launcher import debug_start, stop_dedicated_server
 
@@ -48,3 +49,15 @@ class UIActions:
         """
         stop_dedicated_server()
         self._disconnect_socket()
+
+    def open_website(self, page: str = "") -> None:
+        """
+        Opens the website for the given page.
+
+        Valid pages are `'stats', 'leaderboard', 'queue', 'history', 'profile', and ''`
+        """
+        assert page in ["", "stats", "leaderboard", "queue", "history", "profile"], f"Invalid page: {page}"
+        
+        url = f"{state.site_url()}/{page}"
+        
+        webbrowser.open(url, new=2)

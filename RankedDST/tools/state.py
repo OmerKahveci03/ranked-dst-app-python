@@ -39,6 +39,20 @@ def socket_url() -> str:
         return "http://localhost:5000"
     return "https://dontgetlosttogether.com"
 
+def site_url() -> str:
+    """
+    Returns the base url for the website
+
+    Returns
+    -------
+    site_url: str 
+        The URL exposed by the frontend
+    """
+
+    if DEVELOPING:
+        return "http://localhost:5173"
+    return "https://dontgetlosttogether.com"
+
 # -------------------- MATCH STATE -------------------- #
 MatchNone = "no_match" # You are not in a live match
 MatchWorldGenerating = "world_generating"

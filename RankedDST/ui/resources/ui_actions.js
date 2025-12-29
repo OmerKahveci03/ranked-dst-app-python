@@ -66,9 +66,19 @@ function onLogoutClicked() {
     window.pywebview.api.logout_button();
 }
 
+function onOpenWebsite(page) {
+    if (!window.pywebview) {
+        console.error("pywebview not ready");
+        return
+    }
+    
+    window.pywebview.api.open_website(page);
+}
+
 // Expose this to the window
 window.onPress = onPress;
 window.saveKleiSecret = saveKleiSecret;
 window.onStartServerClicked = onStartServerClicked;
 window.onStopServerClicked = onStopServerClicked;
 window.onLogoutClicked = onLogoutClicked;
+window.onOpenWebsite = onOpenWebsite;

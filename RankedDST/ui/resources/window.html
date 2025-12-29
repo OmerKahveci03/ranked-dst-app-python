@@ -44,20 +44,40 @@
     </div>
   </div>
   <div id="main-body">
+    <!-- Server May Be Down -->
     <div id="no-server-main">
-      <div id="top-msg">We apologize for any inconveniences</div>
-      <img id="bones" src="./images/Skeleton_5.png"/>
-      <div id="bot-msg">
+      <div id="top-msg-no-server">We apologize for any inconveniences</div>
+      <img id="bones" src="./images/skeleton_5.png"/>
+      <div id="bot-msg-no-server">
         <img id="discord" src="./icons/discord-icon.svg"/>
         <div>Reach out to us for support!</div>
         <img id="gramophone" src="./anims/gramophone_anim.webp"/>
       </div>
     </div>
+
+    <!-- Not Connected -->
     <div id="not-connected-main">
-      <img class="wagstaff" src="./images/wagstaff.png"/>
+      <div id="top-row-not-connected" class="row">
+        <img class="row-img" src="./images/missing_character.webp"/>
+        <div class="label">
+          Create an account on our <u class="clickable" onclick="onOpenWebsite('profile')">website</u> to get started!
+        </div>
+      </div>
+      
+      <div id="bot-row-not-connected" class="row">
+        <div class="label">
+          Then click <strong>'Generate Secret'</strong> at the profile page and paste it above.
+        </div>
+        <img class="row-img" src="./images/ancient_lunarune_stone.webp"/>
+      </div>
     </div>
+
+    <!-- Connecting -->
     <div id="connecting-main"></div>
+
+    <!-- Connected -->
     <div id="connected-main">
+      <img class="wagstaff" src="./images/wagstaff.png"/>
       <div class="button" onclick="onPress()">Press Me</div>
 
       <div class="button" onclick="onStartServerClicked()">Start Server</div>
