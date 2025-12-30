@@ -15,10 +15,14 @@ import socketio
 
 import RankedDST.tools.state as state
 from RankedDST.tools.secret import hash_string
+from RankedDST.tools.job_object import assign_process
 
 from pathlib import Path
 from RankedDST.tools.logger import logger, server_logger
 from RankedDST.dedicated_server.server_manager import SERVER_MANAGER
+
+CREATE_NO_WINDOW = 0x08000000
+
 
 def create_cluster(
     cluster_dir: str,
@@ -169,7 +173,9 @@ def launch_shard(
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
+        creationflags=CREATE_NO_WINDOW,
     )
+    assign_process(proc)
     SERVER_MANAGER.set_shard_status(shard=shard, status='launching')
 
     def stream_output():
@@ -280,7 +286,7 @@ def stop_dedicated_server(timeout: float = 1.0) -> None:
     timeout: flaot (default 1.0)
         The time in seconds to wait before force killing the processes.
     """
-    if not SERVER_MANAGER.is_running:
+    if not SERVER_MANAGER.is_running():
         logger.info("Dedicated server was not running. Nothing to shutdown.")
         return
     

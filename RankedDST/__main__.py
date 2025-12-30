@@ -7,7 +7,7 @@ from RankedDST.networking.socket import connect_websocket, disconnect_websocket
 
 from RankedDST.tools.config import load_initial_state
 from RankedDST.tools.logger import logger
-
+from RankedDST.tools.job_object import create_kill_on_close_job
 def init():
     """
     Obtains initial state and attempts the first socket connection once the webview window is created
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     #   Either we have a secret or we don't
     #   Then either we have dedicated server tools installed or we don't
     # load_initial_state()
-    
+    create_kill_on_close_job()
     proxy_thread = threading.Thread(
         target=start_proxy_server,
         kwargs={
