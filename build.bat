@@ -8,7 +8,7 @@ set DEV_MODE=1
 set APP_NAME=RankedDSTApp
 
 :: -------- App name suffix --------
-if "%DEV_MODE%"=="1" (
+if "%DEV_MODE%"=="0" (
     set APP_NAME=%APP_NAME%Dev
 )
 set ENTRY_POINT=RankedDST\__main__.py

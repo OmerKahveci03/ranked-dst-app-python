@@ -85,6 +85,9 @@ def set_match_state(new_state: str, window: webview.Window | None = None) -> Non
         raise ValueError(f"Match state invalid. Recieved: {new_state}\n\tMust be in {valid_match_states}")
     
     global match_state
+    if match_state == new_state:
+        return
+    
     logger.info( f"Changing match state to {new_state}")
     update_match_state(new_state=new_state, window=window)
     match_state = new_state
@@ -122,6 +125,9 @@ def set_connection_state(new_state: str, window: webview.Window | None = None) -
         raise ValueError(f"Connection state invalid. Recieved: {new_state}\n\tMust be in {valid_connection_states}")
     
     global connection_state
+    if connection_state == new_state:
+        return
+    
     logger.info( f"Changing connection state to {new_state}")
     update_connection_state(new_state=new_state, window=window)
     connection_state = new_state

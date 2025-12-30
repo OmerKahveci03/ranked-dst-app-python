@@ -71,6 +71,8 @@
     --primaryDark: #956b00;
     --secondaryDark: #000000;
 
+    --warning: #d13a3a;
+
     --primaryGradient: linear-gradient(144deg, var(--primaryDark) 5%, var(--primary) 50%, var(--primaryDark) 95%);
     --secondaryGradient: linear-gradient(150deg, var(--secondaryDark) 5%, var(--secondary) 50%, var(--secondaryDark) 95%);
     --secondaryGradientAlt: linear-gradient(27deg, var(--secondaryDark) 13%, var(--secondary) 70%, var(--secondaryDark) 95%);
@@ -182,7 +184,7 @@ body {
 
     #no-connection-section {
         font-size: 30px;
-        color: #d13a3a;
+        color: var(--warning);
     }
 
     .header-button {
@@ -349,7 +351,7 @@ body {
         align-items: center;
         justify-content: center;
 
-        gap: 30px;
+        gap: 25px;
 
         #wagstaff-section {
             display: flex;
@@ -357,24 +359,45 @@ body {
             align-items: center;
 
             gap: 20px;
+            font-size: 30px;
 
-            width: 100%;
+            text-wrap: balance;
+            text-align: center;
+
+            width: 85%;
 
             #wagstaff {
                 height: 200px;
                 animation: fadeIn 0.7s ease-out both;
             }
 
-            #wagstaff-dialogue-top {
-                font-size: 36px;
+            .wagstaff-dialogue-top {
                 animation: popIn 0.2s linear both;
                 animation-delay: 1s;
             }
 
-            #wagstaff-dialogue-bot {
-                font-size: 36px;
+            .wagstaff-dialogue-bot {
                 animation: popIn 0.2s linear both;
                 animation-delay: 1.6s;
+            }
+        }
+
+        .button {
+            font-family: var(--klei);
+            font-size: 28px;
+            color: var(--tertiary);
+
+            border: 2px solid var(--tertiary);
+            border-radius: 6px;
+
+            padding: 15px 25px;
+
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover{
+                border: 2px solid var(--secondary);
+                color: var(--secondary);
             }
         }
 
@@ -386,24 +409,7 @@ body {
             justify-content: space-around;
             align-items: center;
 
-            .button {
-                font-family: var(--klei);
-                font-size: 28px;
-                color: var(--tertiary);
 
-                border: 2px solid var(--tertiary);
-                border-radius: 6px;
-
-                padding: 15px 25px;
-
-                cursor: pointer;
-                transition: all 0.2s ease;
-
-                &:hover{
-                    border: 2px solid var(--secondary);
-                    color: var(--secondary);
-                }
-            }
 
             #queue-button {
                 animation: popIn 0.2s linear both;
@@ -416,13 +422,61 @@ body {
             }
         }
 
+        .footer {
+            width: 100%;
+            height: 100px;
 
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
+            flex-direction: column;
+
+            text-wrap: balance;
+            text-align: center;
+        }
+
+        #world-gen-msg {
+            color: var(--secondary);
+            font-size: 24px;
+            font-weight: 600;
+
+            text-shadow: 1px 1px 1px var(--tertiary);
+            animation: fadeIn 0.7s ease-out both;
+            animation-delay: 3s;
+        }
+
+        #world-ready-msg {
+            color: var(--secondary);
+            font-size: 24px;
+            animation: fadeIn 0.7s ease-out both;
+            animation-delay: 1.4s;
+        }
+
+        #world-ready-warning {
+            color: var(--warning);
+            font-size: 24px;
+            font-weight: 800;
+            text-shadow: 1px 1px 1px var(--secondaryDark);
+            animation: fadeIn 0.7s ease-out both;
+            animation-delay: 2.4s;
+        }
+
+        #world-ready-msg {
+            color: var(--secondary);
+            font-size: 24px;
+            animation: fadeIn 0.7s ease-out both;
+            animation-delay: 2s;
+        }
+
+        #in-progress-footer {
+            animation: fadeIn 0.7s ease-out both;
+            animation-delay: 2s;
+        }
+
+        #completed-footer {
+            animation: fadeIn 0.7s ease-out both;
+            animation-delay: 2s;
+        }
     }
-}
-
-#footer {
-    width: 100%;
-    height: 40px;
-
-    background: var(--secondaryGradientAlt);
 }

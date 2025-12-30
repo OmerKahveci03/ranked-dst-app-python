@@ -83,14 +83,38 @@
     <!-- Connected -->
     <div id="connected-main">
       <div id="wagstaff-section">
-        <div id="wagstaff-dialogue-top">Welcome back!</div>
+        <div class="wagstaff-dialogue-top"></div>
         <img id="wagstaff" src="./images/wagstaff.png"/>
-        <div id="wagstaff-dialogue-bot">Ready for your next ranked match?</div>
+        <div class="wagstaff-dialogue-bot"></div>
       </div>
 
-      <div id="button-section">
-        <div id="queue-button" class="button">Find A Match</div>
-        <div id="stats-button" class="button" onclick="onOpenWebsite('stats')">View Stats</div>
+      <!-- No Match -->
+      <div id="no-match-footer" class="footer">
+        <div id="button-section">
+          <div id="queue-button" class="button" onclick="onOpenWebsite('queue')">Find A Match</div>
+          <div id="stats-button" class="button" onclick="onOpenWebsite('stats')">View Stats</div>
+        </div>
+      </div>
+
+      <!-- World Generating -->
+      <div id="world-generating-footer" class="footer">
+        <div id="world-gen-msg">It is not recommended to try joining the world yet.</div>
+      </div>
+
+      <!-- World Ready -->
+      <div id="world-ready-footer" class="footer">
+        <div id="world-ready-msg">To find the world: click <strong>Browse Games</strong> and set <strong>Connection</strong> filter to <b>LAN</b>.</div>
+        <div id="world-ready-warning">Don't start before the draft phase is over.</div>
+      </div>
+
+      <!-- In Progress -->
+      <div id="in-progress-footer" class="footer">
+        <div class="button" onclick="onStopServerClicked()">Shutdown Server</div>
+      </div>
+
+      <!-- Completed -->
+      <div id="completed-footer" class="footer">
+        <div class="button" onclick="onOpenWebsite('queue')">View Match Status</div>
       </div>
 
       <!-- <div class="button" onclick="onStartServerClicked()">Start Server</div> -->
