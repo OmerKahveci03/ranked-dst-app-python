@@ -5,15 +5,6 @@
 */
 import { connectionStateChanged, setUserData, matchStateChanged } from "./ui_updates.js";
 
-function onPress() {
-    if (!window.pywebview) {
-        console.error("pywebview not ready");
-        return
-    }
-    
-    window.pywebview.api.test_button();
-}
-
 function saveKleiSecret() {
     if (!window.pywebview) {
         console.error("pywebview not ready");
@@ -76,7 +67,6 @@ function onOpenWebsite(page) {
 }
 
 // Expose this to the window
-window.onPress = onPress;
 window.saveKleiSecret = saveKleiSecret;
 window.onStartServerClicked = onStartServerClicked;
 window.onStopServerClicked = onStopServerClicked;

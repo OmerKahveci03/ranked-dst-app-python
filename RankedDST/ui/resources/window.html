@@ -73,15 +73,28 @@
     </div>
 
     <!-- Connecting -->
-    <div id="connecting-main"></div>
+    <div id="connecting-main">
+      <div id="connecting-msg">Please Wait...</div>
+      <div class="enter-left-wrapper">
+        <img id="connecting-item" src="./images/calibrated_perceiver.png"/>
+      </div>
+    </div>
 
     <!-- Connected -->
     <div id="connected-main">
-      <img class="wagstaff" src="./images/wagstaff.png"/>
-      <div class="button" onclick="onPress()">Press Me</div>
+      <div id="wagstaff-section">
+        <div id="wagstaff-dialogue-top">Welcome back!</div>
+        <img id="wagstaff" src="./images/wagstaff.png"/>
+        <div id="wagstaff-dialogue-bot">Ready for your next ranked match?</div>
+      </div>
 
-      <div class="button" onclick="onStartServerClicked()">Start Server</div>
-      <div class="button" onclick="onStopServerClicked()">Stop Server</div>
+      <div id="button-section">
+        <div id="queue-button" class="button">Find A Match</div>
+        <div id="stats-button" class="button" onclick="onOpenWebsite('stats')">View Stats</div>
+      </div>
+
+      <!-- <div class="button" onclick="onStartServerClicked()">Start Server</div> -->
+      <!-- <div class="button" onclick="onStopServerClicked()">Stop Server</div> -->
     </div>
   </div>
   

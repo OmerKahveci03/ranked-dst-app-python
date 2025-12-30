@@ -6,8 +6,12 @@ This module contains the global logger object to be imported by the rest of the 
 
 # RankedDST/tools/logger.py
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
+
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
 
 LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
@@ -29,7 +33,7 @@ def initialize_logger(name: str) -> logging.Logger:
 
         logger.addHandler(fh)
 
-        ch = logging.StreamHandler()
+        ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(fmt)
         logger.addHandler(ch)
 

@@ -22,9 +22,6 @@ class UIActions:
         self._connect_socket = socket_connect_func
         self._disconnect_socket = socket_disconnect_func
 
-    def test_button(self) -> None:
-        logger.info("Button was pressed")
-
     def save_klei_secret(self, new_secret: str) -> None:
         """
         Triggered when the `klei-secret-button` is clicked on the UI.
