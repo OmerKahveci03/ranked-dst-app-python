@@ -5,7 +5,7 @@ from RankedDST.ui.window import create_window, get_window
 from RankedDST.networking.proxy import start_proxy_server
 from RankedDST.networking.socket import connect_websocket, disconnect_websocket
 
-from RankedDST.tools.config import load_initial_state
+from RankedDST.tools.state import load_initial_state
 from RankedDST.tools.logger import logger
 from RankedDST.tools.job_object import create_kill_on_close_job
 def init():

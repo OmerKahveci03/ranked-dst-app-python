@@ -8,7 +8,6 @@ The connection is to either http://localhost:5000/proxy or https://dontgetlostto
 
 import webview
 import socketio
-import time
 import RankedDST.tools.state as state
 
 from RankedDST.tools.secret import hash_string
@@ -43,6 +42,10 @@ def connect_websocket() -> socketio.Client | None:
     
     if isinstance(client_socket, socketio.Client) and client_socket.connected:
         logger.info(" Socket is already connected")
+        return client_socket
+
+    if state.get_connection_state() == state.ConnectionNoPath:
+        logger.info(" Can't connect websocket without dedicated server tools")
         return client_socket
 
     state.set_connection_state(state.ConnectionConnecting, window_object)
@@ -171,6 +174,7 @@ def connect_websocket() -> socketio.Client | None:
             window=window_object,
             overwrite=True
         )
+        # Our saved secret doesn't work, so we will delete it
         secret_key = "klei_secret_dev" if state.DEVELOPING else "klei_secret"
         save_data({secret_key : ""})
         # state.set_connection_state(state.ConnectionNotConnected, window_object)

@@ -66,9 +66,37 @@ function onOpenWebsite(page) {
     window.pywebview.api.open_website(page);
 }
 
+function onOpenFileExplorer(){
+    if (!window.pywebview) {
+        console.error("pywebview not ready");
+        return
+    }
+    
+    window.pywebview.api.open_file_explorer_ui();
+}
+
+const dediPathInput = document.getElementById("dedi-path-input");
+
+dediPathInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        onSubmitDediPath(dediPathInput.value);
+    }
+});
+
+function onSubmitDediPath(path){
+    if (!window.pywebview) {
+        console.error("pywebview not ready");
+        return
+    }
+    
+    window.pywebview.api.submit_dedi_path(path);
+}
 // Expose this to the window
 window.saveKleiSecret = saveKleiSecret;
 window.onStartServerClicked = onStartServerClicked;
 window.onStopServerClicked = onStopServerClicked;
 window.onLogoutClicked = onLogoutClicked;
 window.onOpenWebsite = onOpenWebsite;
+window.onOpenFileExplorer = onOpenFileExplorer;
+window.onSubmitDediPath = onSubmitDediPath;

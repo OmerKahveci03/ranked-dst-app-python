@@ -12,6 +12,7 @@ from RankedDST.dedicated_server.world_launcher import debug_start, stop_dedicate
 from RankedDST.tools.logger import logger
 import RankedDST.tools.state as state
 from RankedDST.tools.config import save_data
+from RankedDST.tools.path_checker import required_files_exist, open_file_explorer
 
 class UIActions:
     """
@@ -58,3 +59,44 @@ class UIActions:
         url = f"{state.site_url()}/{page}"
         
         webbrowser.open(url, new=2)
+
+    def open_file_explorer_ui(self) -> None:
+        """
+        Opens the file explorer and checks if the provided path contains necessary files. If it does,
+        then the path is saved, stored in memory, and connect_socket is run.
+        """
+
+        path = open_file_explorer()
+
+        if not path:
+            logger.info("No path provided")
+            return
+        
+        files_exist = required_files_exist(dedi_path=path)
+        if not files_exist:
+            logger.info(f"Incorrect path. Files do not exist at '{path}'")
+            return
+        
+        logger.info("User provided the correct path!")
+        save_data({'dedi_path' : path})
+        state.set_user_data(new_values={'dedi_path' : path})
+        state.set_connection_state(state.ConnectionConnecting)
+
+        self._connect_socket()
+
+    def submit_dedi_path(self, path: str) -> None:
+        if not isinstance(path, str):
+            logger.info("User did not provide a string")
+            return
+        
+        files_exist = required_files_exist(dedi_path=path)
+        if not files_exist:
+            logger.info(f"Incorrect path. Files do not exist at '{path}'")
+            return
+        
+        logger.info("User provided the correct path!")
+        save_data({'dedi_path' : path})
+        state.set_user_data(new_values={'dedi_path' : path})
+        state.set_connection_state(state.ConnectionConnecting)
+
+        self._connect_socket() # to do: deal with duplicated code

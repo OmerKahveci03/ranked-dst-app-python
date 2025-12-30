@@ -6,6 +6,7 @@
 
 // The list of elements to display for the given connection state
 const connectionStateElements = {
+    no_path: ["no-path-section", "no-path-main"],
     not_connected: ["not-connected-section", "not-connected-main"],
     no_server: ["no-connection-section", "no-server-main"],
     connecting: ["connecting-section", "connecting-main"],

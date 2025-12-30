@@ -1,10 +1,6 @@
 import os, json
-import webview
 
-from RankedDST.tools import state
-from RankedDST.tools.logger import logger
-
-CONFIG_KEYS = ["klei_secret_dev", "klei_secret", "dedicated_server_path"]
+CONFIG_KEYS = ["klei_secret_dev", "klei_secret", "dedi_path"]
 
 def get_config_path() -> str:
     """
@@ -28,6 +24,8 @@ def get_config_path() -> str:
 def save_data(save_values: dict[str, str]) -> None:
     """
     Writes the values provided to the configuration file.
+
+    Supported config keys: `'klei_secret_dev', 'klei_secret', 'dedi_path'`
 
     Parameters
     ----------
@@ -56,27 +54,3 @@ def save_data(save_values: dict[str, str]) -> None:
     with open(config_fp, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=4)
 
-def load_initial_state(window: webview.Window) -> None:
-    """
-    Loads the ~/home/.ranked_dst/config.json file and reads the data found.
-    """
-
-    logger.info("Loading initial state...")
-    config_fp = get_config_path()
-    with open(config_fp, "r", encoding="utf-8") as file:
-        config_data: dict[str, str] = json.load(file)
-        logger.info(f"Read {config_data} into config data!")
-
-    secret_key = "klei_secret_dev" if state.DEVELOPING else "klei_secret"
-
-    klei_secret = config_data.get(secret_key, None)
-    if klei_secret:
-        logger.info(f"Klei secret was stored as {klei_secret}")
-        state.set_user_data({"klei_secret" : klei_secret})
-    else:
-        logger.info("No klei secret was stored.")
-
-    logger.info(f"User data state is now: {state.get_user_data()}")
-
-    state.set_match_state(state.MatchNone, window=window)
-    state.set_connection_state(state.ConnectionNotConnected, window=window)  # might want to remove this actually
