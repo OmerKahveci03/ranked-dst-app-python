@@ -7,7 +7,6 @@ Production is implemented in the GoLang app.
 import os
 import re
 import subprocess
-import shutil
 import time
 import threading
 import webview
@@ -213,18 +212,12 @@ def launch_shard(
 
 def start_dedicated_server(
     server_configs: dict[str, str],
-    base_cluster_dir: str = r"C:\Users\ofsys\Documents\Klei\DoNotStarveTogether", # to do: dont make these default arguments
-    nullrender_fp: str = r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe",
     window: webview.Window | None = None,
     client_socket: socketio.Client | None = None,
 ) -> None:
     """
     Parameters
     ----------
-    base_cluster_dir: str
-        The directory for the cluster folder to be created in.
-    nullrender_fp: str
-        The full path to the executable that launches and hosts the DST world.
     server_configs: dict[str, str]
         A dictionary containing all files to be written. The key is the file type and the value is the
         entire contents of the file. The 'MatchId' and 'ModIds' are also provided.
@@ -240,8 +233,17 @@ def start_dedicated_server(
     client_socket: socketio.Client (default None)
         The global socketio object. Needed to emit events to the server when certain events take place.
     """
-    
+    logger.info("Starting")
+    base_cluster_dir = Path.home() / "Documents" / "Klei" / "DoNotStarveTogether" # to do: find this shit bro
+
+    dedi_path = state.get_user_data(get_key='dedi_path')
+    logger.info(f"dedi path is: {dedi_path}")
+    nullrender_fp = os.path.join(dedi_path, 'bin64', 'dontstarve_dedicated_server_nullrenderer_x64.exe')
+
+    logger.info(f"Starting Dedicated Server!\n\tdedi_path: {dedi_path}\n\tnullrender_fp: {nullrender_fp}")
+
     assert os.path.exists(nullrender_fp), "Nullrender binary must exist"
+    assert os.path.exists(base_cluster_dir), f"Base cluster directory must exist at {base_cluster_dir}"
 
     if SERVER_MANAGER.is_running():
         logger.info("⚠️ Dedicated server already running ⚠️")
@@ -318,50 +320,3 @@ def stop_dedicated_server(timeout: float = 1.0) -> None:
 
     SERVER_MANAGER.clear_subprocesses()
     logger.info("✅ Dedicated server stopped ✅")
-
-
-def debug_start() -> None:
-    """
-    Starts the dedicated server using hardcoded filepaths. Used for testing purposes only.
-    """
-    cluster_dir = r"C:\Users\ofsys\Documents\Klei\DoNotStarveTogether\TestWorld"
-    nullrender_fp = r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\bin64\dontstarve_dedicated_server_nullrenderer_x64.exe"
-    static_dir = r"C:\Users\ofsys\Documents\Code\FullStack\ranked-dst\backend\static"
-
-    os.makedirs(cluster_dir, exist_ok=True)
-
-    cluster_ini_src = os.path.join(static_dir, "cluster.ini")
-    assert os.path.exists(cluster_ini_src), "Missing cluster.ini"
-    shutil.copy2(cluster_ini_src, os.path.join(cluster_dir, "cluster.ini"))
-
-    for shard in ["Master", "Caves"]:
-
-        shard_cluster = os.path.join(cluster_dir, shard)
-        os.makedirs(shard_cluster, exist_ok=True)
-
-        for file_name in "server.ini", "worldgenoverride.lua", "modoverrides.lua":
-            static_fp = os.path.join(static_dir, shard, file_name)
-            assert os.path.exists(static_fp), f"Missing static file: {static_fp}"
-
-            write_fp = os.path.join(shard_cluster, file_name)
-            shutil.copy2(static_fp, write_fp)
-            
-    cluster_name = os.path.basename(cluster_dir)
-    master_process = launch_shard(
-        nullrender_fp=nullrender_fp,
-        shard="Master",
-        cluster_name=cluster_name,
-        window=None,
-        client_socket=None
-    )
-
-    caves_process = launch_shard(
-        nullrender_fp=nullrender_fp,
-        shard="Caves",
-        cluster_name=cluster_name,
-        window=None,
-        client_socket=None
-    )
-
-    SERVER_MANAGER.set_subprocesses(master_process, caves_process)
-    logger.info("Launched both master and caves!")

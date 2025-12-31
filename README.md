@@ -2,7 +2,8 @@
 
 
 ### To Do:
-1. Setup user login. Replace klei secret logic with simple username/password and then recieve an auth token that doesn't expire
-2. Implement the dedicated server tools searcher again
-3. Make the ui nice. Use images and have animations
-
+1. On connect backend should send 'start_match' true or false
+2. Under common questions for landing page: add a guide to setting up dedi server tools and path. Also make the url adjust on the selected tab so I can redirect ppl to it
+3. After shutting down a world, also zip up the past matches and move them in a 'Past Ranked Matches' folder
+4. Make app show the character you picked and remind you to play it
+5. Make a proper README.md since this will be open source

@@ -21,10 +21,6 @@ def init():
     connect_websocket()
 
 if __name__ == "__main__":
-    # First: determine initial state
-    #   Either we have a secret or we don't
-    #   Then either we have dedicated server tools installed or we don't
-    # load_initial_state()
     create_kill_on_close_job()
     proxy_thread = threading.Thread(
         target=start_proxy_server,

@@ -42,6 +42,7 @@ def create_window(title: str, socket_connect_func: callable, socket_disconnect_f
         height=620,
         width=420,
         js_api=UIActions(
+            window_getter=get_window,
             socket_connect_func=socket_connect_func, 
             socket_disconnect_func=socket_disconnect_func
         ),

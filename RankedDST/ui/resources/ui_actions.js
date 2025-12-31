@@ -22,15 +22,6 @@ function saveKleiSecret() {
     // pause the ui or something
 }
 
-function onStartServerClicked() {
-    if (!window.pywebview) {
-        console.error("pywebview not ready");
-        return
-    }
-    
-    window.pywebview.api.start_server_button();
-}
-
 function onStopServerClicked() {
     if (!window.pywebview) {
         console.error("pywebview not ready");
@@ -94,7 +85,6 @@ function onSubmitDediPath(path){
 }
 // Expose this to the window
 window.saveKleiSecret = saveKleiSecret;
-window.onStartServerClicked = onStartServerClicked;
 window.onStopServerClicked = onStopServerClicked;
 window.onLogoutClicked = onLogoutClicked;
 window.onOpenWebsite = onOpenWebsite;

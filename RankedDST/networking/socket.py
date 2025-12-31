@@ -13,6 +13,7 @@ import RankedDST.tools.state as state
 from RankedDST.tools.secret import hash_string
 from RankedDST.tools.config import save_data
 from RankedDST.tools.logger import logger
+from RankedDST.ui.updates import show_popup
 
 from RankedDST.dedicated_server.world_launcher import start_dedicated_server, stop_dedicated_server
 
@@ -172,12 +173,12 @@ def connect_websocket() -> socketio.Client | None:
         state.set_user_data(
             new_values={"klei_secret": ""}, 
             window=window_object,
-            overwrite=True
         )
+        show_popup(window=window_object, popup_msg="Invalid Klei Secret")
         # Our saved secret doesn't work, so we will delete it
         secret_key = "klei_secret_dev" if state.DEVELOPING else "klei_secret"
         save_data({secret_key : ""})
-        # state.set_connection_state(state.ConnectionNotConnected, window_object)
+        state.set_connection_state(state.ConnectionNotConnected, window_object)
         client_socket.disconnect()
 
 

@@ -592,3 +592,55 @@ body {
         }
     }
 }
+
+#popup-wrapper {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    z-index: 9999;
+
+    #popup {
+        width: 250px;
+        height: 200px;
+
+        border: 2px solid var(--tertiary);
+        border-radius: 24px;
+        background: var(--secondaryGradientAlt);
+
+        color: var(--tertiary);
+
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
+
+        animation: popIn 0.3s linear both;
+        animation-delay: 0.2s;
+
+        #popup-msg {
+            font-size: 36px;
+        }
+
+        #close-popup-button {
+            font-size: 30px;
+
+            padding: 10px 25px;
+
+            border: 2px solid var(--tertiary);
+            border-radius: 6px;
+            color: var(--tertiary);
+            background-color: var(--primary);
+
+            cursor: pointer;
+            transition: all 0.2s ease-in;
+
+            &:hover {
+                border: 2px solid var(--primary);
+                color: var(--primary);
+                background-color: var(--tertiary);
+            }
+
+        }
+    }
+}

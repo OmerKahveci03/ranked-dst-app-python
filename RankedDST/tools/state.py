@@ -13,7 +13,7 @@ from RankedDST.tools.path_checker import try_find_dedi_path
 
 from RankedDST.ui.updates import update_match_state, update_connection_state, update_user_data
 
-DEVELOPING = True
+DEVELOPING = False
 
 # -------------------- NETWORKING STATE -------------------- #
 def route_url() -> str:
@@ -237,6 +237,7 @@ def load_initial_state(window: webview.Window) -> None:
         set_connection_state(new_state=ConnectionNoPath, window=window)
     else:
         logger.info("Dedicated server tools are ready to go!")
+        set_user_data({"dedi_path" : valid_path})
 
         set_connection_state(ConnectionNotConnected, window=window)  # might want to remove this actually
 

@@ -6,22 +6,24 @@ This module contains the UIActions class; an instance of which is passed into th
 The methods of this class are called by the javascript functions under resources/ui_actions.js
 """
 import webbrowser
-
-from RankedDST.dedicated_server.world_launcher import debug_start, stop_dedicated_server
+from RankedDST.dedicated_server.world_launcher import stop_dedicated_server
 
 from RankedDST.tools.logger import logger
 import RankedDST.tools.state as state
 from RankedDST.tools.config import save_data
 from RankedDST.tools.path_checker import required_files_exist, open_file_explorer
+from RankedDST.ui.updates import show_popup
 
 class UIActions:
     """
     A class to bridge the gap between the javascript of the ui and the python app
     """
 
-    def __init__(self, socket_connect_func: callable, socket_disconnect_func: callable):
+    def __init__(self, window_getter: callable, socket_connect_func: callable, socket_disconnect_func: callable):
+        self._window_getter = window_getter
         self._connect_socket = socket_connect_func
         self._disconnect_socket = socket_disconnect_func
+
 
     def save_klei_secret(self, new_secret: str) -> None:
         """
@@ -32,9 +34,6 @@ class UIActions:
         save_data({secret_key: new_secret})
 
         self._connect_socket()
-
-    def start_server_button(self) -> None:
-        debug_start()
 
     def stop_server_button(self) -> None:
         stop_dedicated_server()
@@ -87,11 +86,13 @@ class UIActions:
     def submit_dedi_path(self, path: str) -> None:
         if not isinstance(path, str):
             logger.info("User did not provide a string")
+            show_popup(window=self._window_getter(), popup_msg="Invalid Input")
             return
         
         files_exist = required_files_exist(dedi_path=path)
         if not files_exist:
             logger.info(f"Incorrect path. Files do not exist at '{path}'")
+            show_popup(window=self._window_getter(), popup_msg="Incorrect Path")
             return
         
         logger.info("User provided the correct path!")

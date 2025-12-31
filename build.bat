@@ -5,7 +5,7 @@ setlocal
 :: 1 = dev build (console visible)
 :: 0 = release build (no console)
 set DEV_MODE=1
-set APP_NAME=RankedDSTApp
+set APP_NAME=RankedDSTProxy
 
 :: -------- App name suffix --------
 if "%DEV_MODE%"=="0" (
@@ -26,7 +26,7 @@ echo [INFO] Using Python: %VENV_PYTHON%
 
 :: -------- Clean old builds --------
 if exist build rmdir /s /q build
-if exist dist rmdir /s /q dist
+:: if exist dist rmdir /s /q dist
 
 :: -------- Build flags --------
 set PYI_FLAGS=--onefile --name %APP_NAME%
@@ -39,8 +39,9 @@ if "%DEV_MODE%"=="0" (
 )
 
 :: -------- Add UI resources --------
+set ICON_PATH=RankedDST\ui\resources\icons\calibrated_perceiver.ico
 set PYI_FLAGS=%PYI_FLAGS% ^
- --add-data "RankedDST\ui\resources;RankedDST/ui/resources"
+ --add-data "RankedDST\ui\resources;RankedDST/ui/resources" --icon "%ICON_PATH%"
 
 :: -------- Build --------
 echo [INFO] Building %APP_NAME%...

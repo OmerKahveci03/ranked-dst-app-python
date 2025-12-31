@@ -44,6 +44,7 @@ const matchStateDialogue = {
     },
 }
 
+
 // Hides all elements for the state map (excluding the ones for the newState)
 function showStateElements(stateElementMap, newState) {
     const allIds = new Set(
@@ -103,16 +104,38 @@ function matchStateChanged(newState) {
     updateWagstaffDialogue(newState);
 }
 
-
 function setUserData(username) {
     const usernameElement = document.getElementById("user-name");
 
     usernameElement.textContent = `Logged in as ${username}`;
 }
 
+function showPopup(popupMsg, buttonMsg) {
+    if (!popupMsg || !buttonMsg) {
+        return
+    }
+
+    const popupElement = document.getElementById("popup"); 
+    const msgElement = popupElement.querySelector("#popup-msg");
+    const btnElement = popupElement.querySelector("#close-popup-button");
+
+    msgElement.textContent = popupMsg;
+    btnElement.textContent = buttonMsg;
+
+    // Remove the hide thingy
+    if (popupElement) popupElement.style.display = "";
+}
+
+function hidePopup() {
+    const popupElement = document.getElementById("popup"); 
+    popupElement.style.display = "none";
+}
+
 function initializeState() {
     matchStateChanged("no_match");
     connectionStateChanged("connecting-section");
+
+    hidePopup();
 }
 initializeState();
 
@@ -120,5 +143,7 @@ initializeState();
 window.connectionStateChanged = connectionStateChanged;
 window.setUserData = setUserData;
 window.matchStateChanged = matchStateChanged;
+window.hidePopup = hidePopup;
+window.showPopup = showPopup;
 
 export { connectionStateChanged, setUserData, matchStateChanged };
