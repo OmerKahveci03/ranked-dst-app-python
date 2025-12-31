@@ -233,14 +233,13 @@ def start_dedicated_server(
     client_socket: socketio.Client (default None)
         The global socketio object. Needed to emit events to the server when certain events take place.
     """
-    logger.info("Starting")
-    base_cluster_dir = Path.home() / "Documents" / "Klei" / "DoNotStarveTogether" # to do: find this shit bro
+    base_cluster_dir = Path.home() / "Documents" / "Klei" / "DoNotStarveTogether"
 
     dedi_path = state.get_user_data(get_key='dedi_path')
     logger.info(f"dedi path is: {dedi_path}")
     nullrender_fp = os.path.join(dedi_path, 'bin64', 'dontstarve_dedicated_server_nullrenderer_x64.exe')
 
-    logger.info(f"Starting Dedicated Server!\n\tdedi_path: {dedi_path}\n\tnullrender_fp: {nullrender_fp}")
+    logger.debug(f"Starting Dedicated Server!\n\tdedi_path: {dedi_path}\n\tnullrender_fp: {nullrender_fp}")
 
     assert os.path.exists(nullrender_fp), "Nullrender binary must exist"
     assert os.path.exists(base_cluster_dir), f"Base cluster directory must exist at {base_cluster_dir}"

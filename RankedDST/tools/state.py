@@ -6,6 +6,8 @@ The source of truth for the project's state.
 import webview
 import json
 import os
+import time
+import threading
 
 from RankedDST.tools.logger import logger
 from RankedDST.tools.config import get_config_path, save_data
@@ -200,7 +202,34 @@ def set_user_data(new_values: dict[str, str | None], window: webview.Window | No
     update_user_data(username=username, window=window)
 
 
-def load_initial_state(window: webview.Window) -> None:
+def poll_dedicated_tools(window: webview.Window, connect_socket_func: callable, check_interval: float = 5.0) -> None:
+    """
+    Should be run when dedicated server tools are not found. Repeatedly checks if server tools are installed.
+    
+    Exists if the `connection_state` is not longer equal to `ConnectionNoPath` or if the searched paths find the tools.
+    
+    Is blocking, so should be run with threading.Thread().start()
+    """
+    logger.info("Polling for dedicated tools...")
+    start = time.time()
+    while True:
+        time.sleep(check_interval)
+        
+        if get_connection_state() != ConnectionNoPath:
+            logger.info("No longer polling for dedicated tools")
+            return
+        
+        found_path = try_find_dedi_path(mute_logs=True)
+        if not found_path:
+            continue
+
+        elapsed = time.time() - start
+        logger.info(f"Dedicated tools found in {int(elapsed)} seconds! No longer polling")
+        set_connection_state(new_state=ConnectionConnecting, window=window)
+        connect_socket_func()
+        return
+
+def load_initial_state(window: webview.Window, connect_socket_func: callable) -> None:
     """
     Loads the ~/home/.ranked_dst/config.json file and reads the data found.
     """
@@ -235,6 +264,16 @@ def load_initial_state(window: webview.Window) -> None:
     if not valid_path:
         logger.info("A path was not found. Will be required to proceed.")
         set_connection_state(new_state=ConnectionNoPath, window=window)
+
+        dedi_poller = threading.Thread(
+            target=poll_dedicated_tools,
+            kwargs={
+                "window": window,
+                "connect_socket_func": connect_socket_func
+            },
+            daemon=True
+        )
+        dedi_poller.start()
     else:
         logger.info("Dedicated server tools are ready to go!")
         set_user_data({"dedi_path" : valid_path})
@@ -246,3 +285,5 @@ def load_initial_state(window: webview.Window) -> None:
 
     logger.info(f"User data state is now: {get_user_data()}")
     set_match_state(MatchNone, window=window) # likely not needed either
+
+    connect_socket_func()
