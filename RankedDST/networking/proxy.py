@@ -45,7 +45,8 @@ def _forward_to_backend(endpoint: str, payload: dict) -> Response:
 
 def create_proxy() -> Flask:
     """
-    Creates a flask object to be used as a proxy
+    Creates a flask object to be used as a proxy. The server only has one endpoint
+    for `/match_event`. An 'endpoint' must be provided in the payload.
 
     Routes
     ------
@@ -63,88 +64,26 @@ def create_proxy() -> Flask:
 
     proxy_app = Flask(__name__)
 
-    @proxy_app.post("/day_reached")
-    def day_reached():
+    @proxy_app.post("/match_event")
+    def match_event():
+        logger.info("Match event!")
         payload = request.get_json(silent=True)
-        if not payload:
+        if not payload or not isinstance(payload, dict):
+            logger.warning("Received an invalid payload")
             return {"error": "invalid json"}, 400
-
-        logger.info(f"""
-            [day_reached] 
-            \n\tklei_id={payload.get('klei_id')}
-            \n\tday={payload.get('day')}
-            \n\tcharacter={payload.get('character')} 
-            \n\tseed={payload.get('seed')}
-        """)
+    
+        logger.info(f"Received payload: {payload}")
 
         if state.get_match_state() == state.MatchWorldReady:
             state.set_match_state(state.MatchInProgress, get_window())
             logger.info("  Player has started their run!")
 
-        return _forward_to_backend("/day_reached", payload)
+        endpoint = payload.pop('endpoint', None)
+        if not endpoint:
+            logger.warning(f"No endpoint provided")
+            return {"error": "no endpoint provided"}, 401
 
-    @proxy_app.post("/flare_used")
-    def flare_used():
-        payload = request.get_json(silent=True)
-        if not payload:
-            return {"error": "invalid json"}, 400
-
-        logger.info(f"""
-            [flare_used] 
-            \n\tklei_id={payload.get('klei_id')} 
-            \n\tday={payload.get('day')}
-            \n\tcharacter={payload.get('character')} 
-            \n\tseed={payload.get('seed')}
-        """)
-
-        return _forward_to_backend("/flare_used", payload)
-
-    @proxy_app.post("/boss_killed")
-    def boss_killed():
-        payload = request.get_json(silent=True)
-        if not payload:
-            return {"error": "invalid json"}, 400
-
-
-        logger.info(f"""
-            [boss_killed] 
-            \n\tklei_id={payload.get('klei_id')} 
-            \n\tday={payload.get('day')}
-            \n\tboss={payload.get('boss_name')}
-        """)
-
-        return _forward_to_backend("/boss_killed", payload)
-
-    @proxy_app.post("/player_died")
-    def player_died():
-        payload = request.get_json(silent=True)
-        if not payload:
-            return {"error": "invalid json"}, 400
-
-        logger.info(f"""
-            [player_died] 
-            \n\tklei_id={payload.get('klei_id')}  
-            \n\tday={payload.get('day')}
-            \n\tdeath_cause={payload.get('death_cause')} 
-        """)
-
-        return _forward_to_backend("/player_died", payload)
-
-    @proxy_app.post("/player_revived")
-    def player_revived():
-        payload = request.get_json(silent=True)
-        if not payload:
-            return {"error": "invalid json"}, 400
-
-        logger.info(f"""
-            [player_revived] 
-            \n\tklei_id={payload.get('klei_id')}  
-            \n\tday={payload.get('day')}
-            \n\revive_method={payload.get('revive_method')} 
-        """)
-
-        return _forward_to_backend("/player_revived", payload)
-
+        return _forward_to_backend(endpoint, payload)
     return proxy_app
 
 

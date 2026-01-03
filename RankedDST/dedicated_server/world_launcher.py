@@ -19,6 +19,7 @@ from RankedDST.tools.job_object import assign_process
 from pathlib import Path
 from RankedDST.tools.logger import logger, server_logger
 from RankedDST.dedicated_server.server_manager import SERVER_MANAGER
+from RankedDST.dedicated_server.world_cleanup import clean_old_files
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -191,6 +192,15 @@ def launch_shard(
                 if master_status == caves_status and master_status == 'launched':
                     logger.info("Both shards are launched!")
                     state.set_match_state(new_state=state.MatchWorldReady, window=window)
+                    raw_secret = state.get_user_data("klei_secret")
+                    hashed = hash_string(raw_secret)
+
+                    logger.info("Player has generated the world")
+                    client_socket.emit(
+                        "world_generated",
+                        {"klei_secret_hash": hashed},
+                        namespace="/proxy"
+                    )
             elif "Leave Announcement" in line:
                 if isinstance(client_socket, socketio.Client) and client_socket.connected and shard == 'Master': # Master shard to avoid duplicate emissions
                     raw_secret = state.get_user_data("klei_secret")
@@ -239,6 +249,8 @@ def start_dedicated_server(
     logger.info(f"dedi path is: {dedi_path}")
     nullrender_fp = os.path.join(dedi_path, 'bin64', 'dontstarve_dedicated_server_nullrenderer_x64.exe')
 
+    steam_mods_path = os.path.join(dedi_path, "mods")
+
     logger.debug(f"Starting Dedicated Server!\n\tdedi_path: {dedi_path}\n\tnullrender_fp: {nullrender_fp}")
 
     assert os.path.exists(nullrender_fp), "Nullrender binary must exist"
@@ -255,8 +267,17 @@ def start_dedicated_server(
     cluster_dir = os.path.join(base_cluster_dir, cluster_name)
     create_cluster(cluster_dir=cluster_dir, server_configs=server_configs)
 
-    # to do: derive the mods path somehow
-    ensure_mods(mod_ids=mod_ids, steam_mods_path=r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server\mods")
+    ensure_mods(mod_ids=mod_ids, steam_mods_path=steam_mods_path)
+
+    raw_secret = state.get_user_data("klei_secret")
+    hashed = hash_string(raw_secret)
+
+    logger.info("Generating World")
+    client_socket.emit(
+        "generating_world",
+        {"klei_secret_hash": hashed},
+        namespace="/proxy"
+    )
 
     state.set_match_state(new_state=state.MatchWorldGenerating, window=window)
     master_process = launch_shard(
@@ -319,3 +340,5 @@ def stop_dedicated_server(timeout: float = 1.0) -> None:
 
     SERVER_MANAGER.clear_subprocesses()
     logger.info("✅ Dedicated server stopped ✅")
+
+    clean_old_files()

@@ -4,11 +4,11 @@ setlocal
 :: -------- Configuration --------
 :: 1 = dev build (console visible)
 :: 0 = release build (no console)
-set DEV_MODE=1
+set DEV_MODE=0
 set APP_NAME=RankedDSTProxy
 
 :: -------- App name suffix --------
-if "%DEV_MODE%"=="0" (
+if "%DEV_MODE%"=="1" (
     set APP_NAME=%APP_NAME%Dev
 )
 set ENTRY_POINT=RankedDST\__main__.py

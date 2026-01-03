@@ -2,8 +2,6 @@
 
 
 ### To Do:
-1. On connect backend should send 'start_match' true or false
 2. Under common questions for landing page: add a guide to setting up dedi server tools and path. Also make the url adjust on the selected tab so I can redirect ppl to it
-3. After shutting down a world, also zip up the past matches and move them in a 'Past Ranked Matches' folder
 4. Make app show the character you picked and remind you to play it
 5. Make a proper README.md since this will be open source

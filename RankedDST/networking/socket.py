@@ -8,6 +8,8 @@ The connection is to either http://localhost:5000/proxy or https://dontgetlostto
 
 import webview
 import socketio
+from threading import Event
+
 import RankedDST.tools.state as state
 
 from RankedDST.tools.secret import hash_string
@@ -35,6 +37,8 @@ def connect_websocket() -> socketio.Client | None:
     """
     logger.info("Connecting websocket...")
     auth_fail: bool = False
+
+    auth_ready = Event()
 
     global client_socket
     window_object = get_window()
@@ -78,8 +82,9 @@ def connect_websocket() -> socketio.Client | None:
 
         If match_id is not none in state.user_data, then the `request_world_files` event is emitted.
         """
-
+        auth_ready.wait(timeout=2)
         logger.info("On connect proxy")
+        print(f"Connect proxy starting with match state {state.get_match_state()}")
         nonlocal auth_fail
         if auth_fail:
             logger.info("⚠️ Auth Failed so Disconnecting ⚠️")
@@ -93,15 +98,17 @@ def connect_websocket() -> socketio.Client | None:
             state.set_match_state(state.MatchNone, window_object)
             return
         
-        logger.info("In a match! Requesting world files!")
-        client_socket.emit(
-            "request_world_files",
-            {
-                "match_id": match_id,
-                "klei_secret_hash": hashed,
-            },
-            namespace="/proxy"
-        )
+        current_match_state = state.get_match_state()
+        if current_match_state != state.MatchCompleted:
+            logger.info(f"In a match with state {current_match_state}! Requesting world files!")
+            client_socket.emit(
+                "request_world_files",
+                {
+                    "match_id": match_id,
+                    "klei_secret_hash": hashed,
+                },
+                namespace="/proxy"
+            )
 
     @client_socket.on("disconnect", namespace="/proxy")
     def on_proxy_disconnect():
@@ -152,11 +159,19 @@ def connect_websocket() -> socketio.Client | None:
         user_id = data.get("user_id")
         username = data.get("username")
         match_id = data.get("match_id", None)
+        match_status = data.get("match_status", None)
+
+        print(f"Connection accepted returned: {data}")
 
         state.set_user_data(
             new_values={"user_id" : user_id, "username" : username, "match_id" : match_id},
             window=window_object
         )
+        if match_status == "completed":
+            state.set_match_state(state.MatchCompleted, window=window_object)
+
+        print(f"Connection accepted ending with match state {state.get_match_state()}")
+        auth_ready.set()
 
     # Auth rejection
     @client_socket.on("connection_denied", namespace="/proxy")
