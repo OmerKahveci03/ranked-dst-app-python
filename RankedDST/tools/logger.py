@@ -13,8 +13,8 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-LOG_DIR = Path.home() / ".ranked_dst" / "logs"
-LOG_DIR.mkdir(exist_ok=True)
+LOG_DIR = Path.home() / "ranked_dst" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 def initialize_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
