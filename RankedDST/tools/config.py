@@ -1,6 +1,6 @@
 import os, json
 
-CONFIG_KEYS = ["klei_secret_dev", "klei_secret", "dedi_path"]
+CONFIG_KEYS = ["proxy_secret_dev", "proxy_secret", "dedi_path"]
 
 def get_config_path() -> str:
     """
@@ -14,7 +14,7 @@ def get_config_path() -> str:
     """
 
     home = os.path.expanduser("~")
-    base_path = os.path.join(home, ".ranked_dst")
+    base_path = os.path.join(home, "ranked_dst")
     config_fp = os.path.join(base_path, "config.json")
 
     os.makedirs(base_path, exist_ok=True)
@@ -25,7 +25,7 @@ def save_data(save_values: dict[str, str]) -> None:
     """
     Writes the values provided to the configuration file.
 
-    Supported config keys: `'klei_secret_dev', 'klei_secret', 'dedi_path'`
+    Supported config keys: `'proxy_secret_dev', 'proxy_secret', 'dedi_path'`
 
     Parameters
     ----------

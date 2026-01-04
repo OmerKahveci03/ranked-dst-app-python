@@ -5,19 +5,19 @@
 */
 import { connectionStateChanged, setUserData, matchStateChanged } from "./ui_updates.js";
 
-function saveKleiSecret() {
+function saveProxySecret() {
     if (!window.pywebview) {
         console.error("pywebview not ready");
         return
     }
 
-    const secretInput = document.getElementById("klei-secret-input");
+    const secretInput = document.getElementById("proxy-secret-input");
     const secretValue = secretInput.value.trim();
 
     if (!secretValue) return
     
     
-    window.pywebview.api.save_klei_secret(secretValue);
+    window.pywebview.api.save_proxy_secret(secretValue);
 
     // pause the ui or something
 }
@@ -84,7 +84,7 @@ function onSubmitDediPath(path){
     window.pywebview.api.submit_dedi_path(path);
 }
 // Expose this to the window
-window.saveKleiSecret = saveKleiSecret;
+window.saveProxySecret = saveProxySecret;
 window.onStopServerClicked = onStopServerClicked;
 window.onLogoutClicked = onLogoutClicked;
 window.onOpenWebsite = onOpenWebsite;

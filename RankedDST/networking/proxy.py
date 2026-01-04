@@ -20,8 +20,8 @@ from RankedDST.ui.window import get_window
 
 def _forward_to_backend(endpoint: str, payload: dict) -> Response:
     # Inject secret hash
-    raw_secret = state.get_user_data("klei_secret")
-    payload["klei_secret_hash"] = hash_string(raw_secret)
+    raw_secret = state.get_user_data("proxy_secret")
+    payload["proxy_secret_hash"] = hash_string(raw_secret)
 
     try:
         resp = requests.post(

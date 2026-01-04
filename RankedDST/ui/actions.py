@@ -25,12 +25,12 @@ class UIActions:
         self._disconnect_socket = socket_disconnect_func
 
 
-    def save_klei_secret(self, new_secret: str) -> None:
+    def save_proxy_secret(self, new_secret: str) -> None:
         """
-        Triggered when the `klei-secret-button` is clicked on the UI.
+        Triggered when the `proxy-secret-button` is clicked on the UI.
         """
-        state.set_user_data({"klei_secret" : new_secret})
-        secret_key = "klei_secret_dev" if state.DEVELOPING else "klei_secret"
+        state.set_user_data({"proxy_secret" : new_secret})
+        secret_key = "proxy_secret_dev" if state.DEVELOPING else "proxy_secret"
         save_data({secret_key: new_secret})
 
         self._connect_socket()

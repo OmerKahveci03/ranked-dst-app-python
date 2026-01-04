@@ -146,17 +146,17 @@ global_user_data = {
     "user_id" : None,
     "username" : None,
     "match_id" : None,
-    "klei_secret" : None,
+    "proxy_secret" : None,
     "dedi_path" : None,
 }
-valid_user_data_keys = ['user_id', 'username', 'match_id', 'klei_secret', 'dedi_path']
+valid_user_data_keys = ['user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path']
 
 def get_user_data(get_key: str | None = None) -> dict[str, str | None] | str | None:
     """
     Returns a dictionary containing the user's data. If get_key is provided, then only the value stored
     for that key is returned.
 
-    Valid keys are `'user_id', 'username', 'match_id', 'klei_secret', 'dedi_path'`
+    Valid keys are `'user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path'`
     """
     if not get_key:
         return global_user_data
@@ -168,7 +168,7 @@ def set_user_data(new_values: dict[str, str | None], window: webview.Window | No
     Set the user data to be equal to the new values. If overwrite is false, then only modify the
     keys provided.
 
-    Valid keys are `'user_id', 'username', 'match_id', 'klei_secret', 'dedi_path'`
+    Valid keys are `'user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path'`
 
     Parameters
     ----------
@@ -231,7 +231,7 @@ def poll_dedicated_tools(window: webview.Window, connect_socket_func: callable, 
 
 def load_initial_state(window: webview.Window, connect_socket_func: callable) -> None:
     """
-    Loads the ~/home/.ranked_dst/config.json file and reads the data found.
+    Loads the ~/home/ranked_dst/config.json file and reads the data found.
     """
 
     logger.info("Loading initial state...")
@@ -249,14 +249,14 @@ def load_initial_state(window: webview.Window, connect_socket_func: callable) ->
             file.write("{}")
             config_data: dict[str, str] = {}
 
-    secret_key = "klei_secret_dev" if DEVELOPING else "klei_secret"
+    secret_key = "proxy_secret_dev" if DEVELOPING else "proxy_secret"
 
-    klei_secret = config_data.get(secret_key, None)
-    if klei_secret:
-        logger.info(f"Klei secret was stored as {klei_secret}")
-        set_user_data({"klei_secret" : klei_secret})
+    proxy_secret = config_data.get(secret_key, None)
+    if proxy_secret:
+        logger.info(f"Proxy secret was stored as {proxy_secret}")
+        set_user_data({"proxy_secret" : proxy_secret})
     else:
-        logger.info("No klei secret was stored.")
+        logger.info("No proxy secret was stored.")
     
     saved_dedi_path = config_data.get('dedi_path', None)
     valid_path = try_find_dedi_path(candidate_path=saved_dedi_path)

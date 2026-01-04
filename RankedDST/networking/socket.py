@@ -27,7 +27,7 @@ client_socket: socketio.Client | None = None
 
 def connect_websocket() -> socketio.Client | None:
     """
-    Attempts to establish a socketio websocket connection. The user_data's klei secret
+    Attempts to establish a socketio websocket connection. The user_data's proxy secret
     is obtained, hashed, then used for authentication.
 
     Returns
@@ -55,12 +55,12 @@ def connect_websocket() -> socketio.Client | None:
 
     state.set_connection_state(state.ConnectionConnecting, window_object)
 
-    raw_secret = state.get_user_data("klei_secret")
+    raw_secret = state.get_user_data("proxy_secret")
     if not raw_secret or raw_secret == "":
         state.set_connection_state(state.ConnectionNotConnected, window_object)
         state.set_match_state(state.MatchNone, window_object)
         stop_dedicated_server()
-        logger.info("🕹️ No Klei secret stored — skipping connection.")
+        logger.info("🕹️ No Proxy secret stored — skipping connection.")
         return client_socket
 
     hashed = hash_string(raw_secret)
@@ -105,7 +105,7 @@ def connect_websocket() -> socketio.Client | None:
                 "request_world_files",
                 {
                     "match_id": match_id,
-                    "klei_secret_hash": hashed,
+                    "proxy_secret_hash": hashed,
                 },
                 namespace="/proxy"
             )
@@ -120,7 +120,7 @@ def connect_websocket() -> socketio.Client | None:
         """
 
         logger.info(f"🛜 Proxy disconnect 🛜")
-        state.set_user_data(new_values={"user_id" : None, "username" : None, "match_id" : None, "klei_secret" : None})
+        state.set_user_data(new_values={"user_id" : None, "username" : None, "match_id" : None, "proxy_secret" : None})
         state.set_connection_state(new_state=state.ConnectionNotConnected, window=window_object)
         state.set_match_state(new_state=state.MatchNone, window=window_object)
 
@@ -138,7 +138,7 @@ def connect_websocket() -> socketio.Client | None:
     @client_socket.on("connection_accepted", namespace="/proxy")
     def on_connection_accepted(data):
         """
-        Defined by us. Emitted by the backend if the hashed klei secret is approved on connection.
+        Defined by us. Emitted by the backend if the hashed proxy secret is approved on connection.
 
         Provides user data.
 
@@ -186,12 +186,12 @@ def connect_websocket() -> socketio.Client | None:
         auth_fail = True
         logger.info("❌ Auth failed. Resetting secret + state.")
         state.set_user_data(
-            new_values={"klei_secret": ""}, 
+            new_values={"proxy_secret": ""}, 
             window=window_object,
         )
-        show_popup(window=window_object, popup_msg="Invalid Klei Secret")
+        show_popup(window=window_object, popup_msg="Invalid Proxy Secret")
         # Our saved secret doesn't work, so we will delete it
-        secret_key = "klei_secret_dev" if state.DEVELOPING else "klei_secret"
+        secret_key = "proxy_secret_dev" if state.DEVELOPING else "proxy_secret"
         save_data({secret_key : ""})
         state.set_connection_state(state.ConnectionNotConnected, window_object)
         client_socket.disconnect()
@@ -223,7 +223,7 @@ def connect_websocket() -> socketio.Client | None:
         client_socket.connect(
             state.socket_url(),
             namespaces=["/proxy"],
-            auth={"klei_secret_hash": hashed},
+            auth={"proxy_secret_hash": hashed},
             transports=["websocket"],
         )
     except Exception as e:

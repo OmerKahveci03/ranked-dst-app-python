@@ -192,24 +192,24 @@ def launch_shard(
                 if master_status == caves_status and master_status == 'launched':
                     logger.info("Both shards are launched!")
                     state.set_match_state(new_state=state.MatchWorldReady, window=window)
-                    raw_secret = state.get_user_data("klei_secret")
+                    raw_secret = state.get_user_data("proxy_secret")
                     hashed = hash_string(raw_secret)
 
                     logger.info("Player has generated the world")
                     client_socket.emit(
                         "world_generated",
-                        {"klei_secret_hash": hashed},
+                        {"proxy_secret_hash": hashed},
                         namespace="/proxy"
                     )
             elif "Leave Announcement" in line:
                 if isinstance(client_socket, socketio.Client) and client_socket.connected and shard == 'Master': # Master shard to avoid duplicate emissions
-                    raw_secret = state.get_user_data("klei_secret")
+                    raw_secret = state.get_user_data("proxy_secret")
                     hashed = hash_string(raw_secret)
 
                     logger.info("Player has left the world")
                     client_socket.emit(
                         "world_left",
-                        {"klei_secret_hash": hashed},
+                        {"proxy_secret_hash": hashed},
                         namespace="/proxy"
                     )
                     state.set_match_state(new_state=state.MatchCompleted, window=window)
@@ -269,13 +269,13 @@ def start_dedicated_server(
 
     ensure_mods(mod_ids=mod_ids, steam_mods_path=steam_mods_path)
 
-    raw_secret = state.get_user_data("klei_secret")
+    raw_secret = state.get_user_data("proxy_secret")
     hashed = hash_string(raw_secret)
 
     logger.info("Generating World")
     client_socket.emit(
         "generating_world",
-        {"klei_secret_hash": hashed},
+        {"proxy_secret_hash": hashed},
         namespace="/proxy"
     )
 
