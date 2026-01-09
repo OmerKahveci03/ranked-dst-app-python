@@ -15,7 +15,7 @@ from RankedDST.tools.secret import hash_string
 from RankedDST.tools.logger import logger
 
 from RankedDST.ui.window import get_window
-
+from RankedDST.ui.updates import show_popup
 
 
 def _forward_to_backend(endpoint: str, payload: dict) -> Response:
@@ -30,6 +30,7 @@ def _forward_to_backend(endpoint: str, payload: dict) -> Response:
             timeout=5,
         )
     except requests.RequestException:
+        show_popup(window=get_window(), popup_msg="Failed to reach backend", button_msg="Uh oh...")
         return Response(
             json.dumps({"error": "backend unreachable"}),
             status=502,

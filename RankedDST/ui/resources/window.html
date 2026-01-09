@@ -7,6 +7,11 @@
 </head>
 <body>
   <div id="header">
+    <!-- DST Cluster Folder Not Found -->
+    <div id="no-cluster-section">
+      Cluster Folder Not Found...
+    </div>
+
     <!-- Dedicated Server Tools Not Present -->
     <div id="no-path-section">
       Missing Prerequisites
@@ -49,6 +54,24 @@
     </div>
   </div>
   <div id="main-body">
+    <!-- DST Cluster Folder Not Found -->
+    <div id="no-cluster-main">
+      <div id="no-cluster-top" class="no-cluster-txt">We can't seem to find your cluster folder. Please provide it for us!</div>
+      
+      <div id="no-cluster-path">
+        <div class="button" onclick="onOpenFileExplorer('cluster_path')">Use File Explorer</div>
+        <img src="./images/research_notes.png"/>
+        <input 
+          id="cluster-path-input"
+          class="path-input"
+          placeholder="...or enter the path yourself. Press 'Enter' to submit."
+          autocomplete="off"
+        />
+      </div>
+      <div id="no-cluster-bot" class="no-cluster-txt">Click below for a step-by-step guide</div>
+      <div id="no-cluster-help" class="button" onclick="onOpenWebsite('setup')">Please Show Me How</div>
+    </div>
+
     <!-- Missing Dedicated Server Tools -->
     <div id="no-path-main">
       <div id="no-path-title" class="row">
@@ -57,14 +80,15 @@
       <div id="no-path-info" class="row">
         <div class="label">You need to download them on steam to proceed</div>
         <img src="./images/conceptual_scrubber.webp"/>
-        <div class="button" onclick="onOpenWebsite('')">Show Me How</div>
+        <div class="button" onclick="onOpenWebsite('setup')">Show Me How</div>
       </div>
       <div id="no-path-tools" class="row">
         <div class="label">If you already have it downloaded and we can't find it, then please provide the path below.</div>
-        <div class="button" onclick="onOpenFileExplorer()">Use File Explorer</div>
+        <div class="button" onclick="onOpenFileExplorer('dedi_path')">Use File Explorer</div>
         <img src="./images/research_notes.png"/>
         <input 
           id="dedi-path-input"
+          class="path-input"
           placeholder="...or enter it yourself. Press 'Enter' to submit."
           autocomplete="off"
         />

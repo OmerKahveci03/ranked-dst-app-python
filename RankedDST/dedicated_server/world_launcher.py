@@ -340,5 +340,3 @@ def stop_dedicated_server(timeout: float = 1.0) -> None:
 
     SERVER_MANAGER.clear_subprocesses()
     logger.info("✅ Dedicated server stopped ✅")
-
-    clean_old_files()

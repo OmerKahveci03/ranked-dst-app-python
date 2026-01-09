@@ -48,5 +48,5 @@ def create_window(title: str, socket_connect_func: callable, socket_disconnect_f
         ),
         # frameless=True,
     )
-    webview.start()
+    webview.start() # to do: make this its own function lol
     

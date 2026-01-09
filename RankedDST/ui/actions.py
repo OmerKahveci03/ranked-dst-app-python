@@ -51,53 +51,63 @@ class UIActions:
         """
         Opens the website for the given page.
 
-        Valid pages are `'stats', 'leaderboard', 'queue', 'history', 'profile', and ''`
+        Valid pages are `'stats', 'leaderboard', 'queue', 'history', 'profile', 'setup' and ''`
         """
-        assert page in ["", "stats", "leaderboard", "queue", "history", "profile"], f"Invalid page: {page}"
+        assert page in ["", "stats", "leaderboard", "queue", "history", "profile", "setup"], f"Invalid page: {page}"
         
         url = f"{state.site_url()}/{page}"
         
         webbrowser.open(url, new=2)
 
-    def open_file_explorer_ui(self) -> None:
+    def open_file_explorer_ui(self, dedi_path: bool) -> None:
         """
         Opens the file explorer and checks if the provided path contains necessary files. If it does,
         then the path is saved, stored in memory, and connect_socket is run.
+
+        If dedi_path is true, then the dedicated server tools are being searched for. Otherwise the
+        cluster folder is searched for.
         """
 
         path = open_file_explorer()
 
         if not path:
             logger.info("No path provided")
+            show_popup(window=self._window_getter(), popup_msg="No Path Provided")
             return
         
-        files_exist = required_files_exist(dedi_path=path)
+        files_exist = required_files_exist(search_path=path, dedi_path=dedi_path)
         if not files_exist:
             logger.info(f"Incorrect path. Files do not exist at '{path}'")
+            show_popup(window=self._window_getter(), popup_msg="Incorrect Path")
             return
         
+        write_key = 'dedi_path' if dedi_path else 'cluster_path'
+        
         logger.info("User provided the correct path!")
-        save_data({'dedi_path' : path})
-        state.set_user_data(new_values={'dedi_path' : path})
+        save_data({write_key : path})
+        state.set_user_data(new_values={write_key : path})
         state.set_connection_state(state.ConnectionConnecting)
 
-        self._connect_socket()
+        if dedi_path:
+            self._connect_socket()
 
-    def submit_dedi_path(self, path: str) -> None:
+    def submit_path(self, path: str, dedi_path: bool) -> None:
         if not isinstance(path, str):
             logger.info("User did not provide a string")
             show_popup(window=self._window_getter(), popup_msg="Invalid Input")
             return
         
-        files_exist = required_files_exist(dedi_path=path)
+        files_exist = required_files_exist(search_path=path, dedi_path=dedi_path)
         if not files_exist:
             logger.info(f"Incorrect path. Files do not exist at '{path}'")
             show_popup(window=self._window_getter(), popup_msg="Incorrect Path")
             return
         
         logger.info("User provided the correct path!")
-        save_data({'dedi_path' : path})
-        state.set_user_data(new_values={'dedi_path' : path})
+        write_key = 'dedi_path' if dedi_path else 'cluster_path'
+        save_data({write_key : path})
+        state.set_user_data(new_values={write_key : path})
         state.set_connection_state(state.ConnectionConnecting)
 
-        self._connect_socket() # to do: deal with duplicated code
+        if dedi_path:
+            self._connect_socket()

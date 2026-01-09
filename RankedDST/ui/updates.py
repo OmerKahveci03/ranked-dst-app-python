@@ -6,7 +6,6 @@ This module contains all functions that invoke javascript functions to update th
 
 import webview
 import json
-from RankedDST.tools.logger import logger
 
 def update_match_state(new_state: str, window: webview.Window | None) -> None:
     """

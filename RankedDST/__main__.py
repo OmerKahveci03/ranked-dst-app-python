@@ -5,10 +5,11 @@ from RankedDST.ui.window import create_window, get_window
 from RankedDST.networking.proxy import start_proxy_server
 from RankedDST.networking.socket import connect_websocket, disconnect_websocket
 
+from RankedDST.dedicated_server.world_cleanup import clean_old_files
+
 from RankedDST.tools.state import load_initial_state
 from RankedDST.tools.logger import logger
 from RankedDST.tools.job_object import create_kill_on_close_job
-
 
 
 def init():
@@ -20,7 +21,9 @@ def init():
         if window: 
             break
     
-    load_initial_state(window=window, connect_socket_func=connect_websocket)
+    load_initial_state()
+    clean_old_files()
+    connect_websocket()
 
 if __name__ == "__main__":
     create_kill_on_close_job()

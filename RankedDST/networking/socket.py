@@ -48,10 +48,8 @@ def connect_websocket() -> socketio.Client | None:
     if isinstance(client_socket, socketio.Client) and client_socket.connected:
         logger.info(" Socket is already connected")
         return client_socket
-
-    if state.get_connection_state() == state.ConnectionNoPath:
-        logger.info(" Can't connect websocket without dedicated server tools")
-        return client_socket
+    
+    state.ensure_prerequisites(window=window_object)
 
     state.set_connection_state(state.ConnectionConnecting, window_object)
 
@@ -204,6 +202,7 @@ def connect_websocket() -> socketio.Client | None:
         try:
             start_dedicated_server(server_configs=data, window=window_object, client_socket=client_socket)
         except Exception as e:
+            show_popup(window=window_object, popup_msg=f"Failed to launch dedicated server: {e}", button_msg="Oh no...")
             logger.info(f"❌ Failed to launch dedicated server: {e}")
 
     @client_socket.on("run_complete", namespace="/proxy")

@@ -7,11 +7,10 @@ import webview
 import json
 import os
 import time
-import threading
 
 from RankedDST.tools.logger import logger
 from RankedDST.tools.config import get_config_path, save_data
-from RankedDST.tools.path_checker import try_find_dedi_path
+from RankedDST.tools.path_checker import try_find_prerequisite_path
 
 from RankedDST.ui.updates import update_match_state, update_connection_state, update_user_data
 
@@ -106,8 +105,9 @@ ConnectionConnecting = "connecting"
 ConnectionNotConnected = "not_connected"
 ConnectionServerDown = "no_server"
 ConnectionNoPath = "no_path" # if prerequisite file paths do not exist we cannot continue
+ConnectionNoCluster = "no_cluster" # no cluster path (klei dst path)
 
-valid_connection_states = [ConnectionNoPath, ConnectionNotConnected, ConnectionServerDown, ConnectionConnecting, ConnectionConnected]
+valid_connection_states = [ConnectionNoCluster, ConnectionNoPath, ConnectionNotConnected, ConnectionServerDown, ConnectionConnecting, ConnectionConnected]
 connection_state = ConnectionNotConnected
 
 def get_connection_state() -> str:
@@ -148,15 +148,16 @@ global_user_data = {
     "match_id" : None,
     "proxy_secret" : None,
     "dedi_path" : None,
+    "cluster_path" : None
 }
-valid_user_data_keys = ['user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path']
+valid_user_data_keys = ['user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path', 'cluster_path']
 
 def get_user_data(get_key: str | None = None) -> dict[str, str | None] | str | None:
     """
     Returns a dictionary containing the user's data. If get_key is provided, then only the value stored
     for that key is returned.
 
-    Valid keys are `'user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path'`
+    Valid keys are `'user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path', 'cluster_path'`
     """
     if not get_key:
         return global_user_data
@@ -168,7 +169,7 @@ def set_user_data(new_values: dict[str, str | None], window: webview.Window | No
     Set the user data to be equal to the new values. If overwrite is false, then only modify the
     keys provided.
 
-    Valid keys are `'user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path'`
+    Valid keys are `'user_id', 'username', 'match_id', 'proxy_secret', 'dedi_path', 'cluster_path'`
 
     Parameters
     ----------
@@ -179,6 +180,8 @@ def set_user_data(new_values: dict[str, str | None], window: webview.Window | No
         ```
         {"user_id" : "1", "username" : "INeedANames"}
         ```
+    window: webview.Window (default None)
+        If provided, then the data may update the UI as well. Only username is supported in this case.
     overwrite: bool (default False)
         If set to true, then all values are reset before writing
     """
@@ -202,44 +205,46 @@ def set_user_data(new_values: dict[str, str | None], window: webview.Window | No
     update_user_data(username=username, window=window)
 
 
-def poll_dedicated_tools(window: webview.Window, connect_socket_func: callable, check_interval: float = 5.0) -> None:
+def wait_required_folder(check_interval: float = 2.0, dedi_path: bool = True) -> None:
     """
-    Should be run when dedicated server tools are not found. Repeatedly checks if server tools are installed.
+    Should be run when dedicated server tools or cluster folder are not found. Repeatedly checks if the given folder 
+    exists/ is installed.
     
-    Exists if the `connection_state` is not longer equal to `ConnectionNoPath` or if the searched paths find the tools.
+    Exits if the `connection_state` is not longer equal to the corresponding state or if the searched paths find the tools.
     
-    Is blocking, so should be run with threading.Thread().start()
+    Is blocking until the exit condition
     """
-    logger.info("Polling for dedicated tools...")
+    blocking_connection_state = ConnectionNoPath if dedi_path else ConnectionNoCluster
+    search_folder = "dedicated tools" if dedi_path else "cluster folder"
+    
+    logger.info(f"Waiting for {search_folder}...")
     start = time.time()
     while True:
         time.sleep(check_interval)
         
-        if get_connection_state() != ConnectionNoPath:
-            logger.info("No longer polling for dedicated tools")
+        if get_connection_state() != blocking_connection_state:
+            logger.info(f"No longer waiting for {search_folder}")
             return
         
-        found_path = try_find_dedi_path(mute_logs=True)
+        found_path = try_find_prerequisite_path(mute_logs=True, dedi_path=dedi_path)
         if not found_path:
             continue
 
         elapsed = time.time() - start
-        logger.info(f"Dedicated tools found in {int(elapsed)} seconds! No longer polling")
-        set_connection_state(new_state=ConnectionConnecting, window=window)
-        connect_socket_func()
+        logger.info(f"{search_folder} found in {int(elapsed)} seconds! No longer waiting.")
         return
 
-def load_initial_state(window: webview.Window, connect_socket_func: callable) -> None:
+def load_initial_state() -> None:
     """
     Loads the ~/home/ranked_dst/config.json file and reads the data found.
     """
-
     logger.info("Loading initial state...")
     config_fp = get_config_path()
     if not os.path.exists(config_fp):
         with open(config_fp, "w", encoding="utf-8") as file:
             file.write("{}")
 
+    # 1. load config json file
     with open(config_fp, "r+", encoding="utf-8") as file:
         try:
             config_data: dict[str, str] = json.load(file)
@@ -248,42 +253,61 @@ def load_initial_state(window: webview.Window, connect_socket_func: callable) ->
             logger.warning(f"Failed to read '{file}'. Replacing it with an empty json")
             file.write("{}")
             config_data: dict[str, str] = {}
-
-    secret_key = "proxy_secret_dev" if DEVELOPING else "proxy_secret"
-
-    proxy_secret = config_data.get(secret_key, None)
-    if proxy_secret:
-        logger.info(f"Proxy secret was stored as {proxy_secret}")
-        set_user_data({"proxy_secret" : proxy_secret})
-    else:
-        logger.info("No proxy secret was stored.")
     
-    saved_dedi_path = config_data.get('dedi_path', None)
-    valid_path = try_find_dedi_path(candidate_path=saved_dedi_path)
+    dev_secret = config_data.pop('proxy_secret_dev', None)
+    if DEVELOPING:
+        config_data['proxy_secret'] = dev_secret
+    set_user_data(new_values=config_data)
+
+def ensure_prerequisites(window: webview.Window) -> None:
+    """
+    Ensures that the following three prerequisites are in place:
+    1. The cluster path in memory maps to the actual folder for cluster files to be created in
+    2. The dedicated server tools and prerequisite files exist on the user's computer
+    3. A proxy secret is stored in memory
+
+    If any step fails, then this function waits until this is no longer the case.
+    """
+    current_user_data = get_user_data()
+
+    # 1. Check for cluster path
+    saved_cluster_path = current_user_data.get('cluster_path', None)
+    valid_cluster_path = try_find_prerequisite_path(candidate_path=saved_cluster_path, dedi_path=False)
+    if not valid_cluster_path:
+        logger.info("The cluster path was not found. Will be required to proceed.")
+        set_connection_state(new_state=ConnectionNoCluster, window=window)
+
+        wait_required_folder(dedi_path=False)
+    else:
+        logger.info("Cluster path exists!")
+        if saved_cluster_path != valid_cluster_path:
+            set_user_data({"cluster_path" : valid_cluster_path})
+            save_data({'cluster_path': valid_cluster_path})
+
+    # 2. Check for dedicated server tools
+    saved_dedi_path = current_user_data.get('dedi_path', None)
+    valid_path = try_find_prerequisite_path(candidate_path=saved_dedi_path, dedi_path=True)
 
     if not valid_path:
         logger.info("A path was not found. Will be required to proceed.")
         set_connection_state(new_state=ConnectionNoPath, window=window)
 
-        dedi_poller = threading.Thread(
-            target=poll_dedicated_tools,
-            kwargs={
-                "window": window,
-                "connect_socket_func": connect_socket_func
-            },
-            daemon=True
-        )
-        dedi_poller.start()
+        wait_required_folder(dedi_path=True)
     else:
         logger.info("Dedicated server tools are ready to go!")
         set_user_data({"dedi_path" : valid_path})
 
-        set_connection_state(ConnectionNotConnected, window=window)  # might want to remove this actually
-
         if saved_dedi_path != valid_path:
+            set_user_data({"dedi_path" : valid_path})
             save_data({'dedi_path': valid_path})
+
+    # 3. Check for proxy secret
+    proxy_secret = current_user_data.get('proxy_secret', None)
+    if proxy_secret:
+        logger.info(f"Proxy secret was stored as {proxy_secret}")
+        set_user_data({"proxy_secret" : proxy_secret})
+    else:
+        logger.info("No proxy secret was stored.")
 
     logger.info(f"User data state is now: {get_user_data()}")
     set_match_state(MatchNone, window=window) # likely not needed either
-
-    connect_socket_func()
