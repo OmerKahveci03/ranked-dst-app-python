@@ -134,7 +134,7 @@ function hidePopup() {
 
 function initializeState() {
     matchStateChanged("no_match");
-    connectionStateChanged("connecting-section");
+    connectionStateChanged("connecting");
 
     hidePopup();
 }

@@ -3,23 +3,68 @@
 
     They are called from actions such as button clicks or form fillouts
 */
+
 import { connectionStateChanged, setUserData, matchStateChanged } from "./ui_updates.js";
 
-function saveProxySecret() {
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+var loginButtonLocked = false;
+async function lockLoginButton(lockDurationSeconds) {
+    if (loginButtonLocked) {
+        return
+    };
+
+    const btn = document.getElementById("login-button");
+    if (btn) {
+        btn.style.opacity = "0.5";
+        btn.style.pointerEvents = "none";
+    }
+
+    loginButtonLocked = true;
+
+    await sleep(lockDurationSeconds * 1000);
+    
+    if (btn) {
+        btn.style.opacity = "";
+        btn.style.pointerEvents = "";
+    }
+    loginButtonLocked = false;
+}
+
+function handleLoginClicked() {
     if (!window.pywebview) {
         console.error("pywebview not ready");
         return
     }
 
-    const secretInput = document.getElementById("proxy-secret-input");
-    const secretValue = secretInput.value.trim();
-
-    if (!secretValue) return
+    if (loginButtonLocked) {
+        return
+    }
     
-    
-    window.pywebview.api.save_proxy_secret(secretValue);
 
-    // pause the ui or something
+    const usernameInput = document.getElementById("login-username-input");
+    const usernameValue = usernameInput.value.trim();
+
+    if (!usernameValue) return;
+
+    const passwordInput = document.getElementById("login-password-input");
+    const passwordValue = passwordInput.value.trim();
+
+    if (!passwordValue) return;
+    
+    lockLoginButton(5);
+    window.pywebview.api.login_clicked(usernameValue, passwordValue);
+}
+
+function onLogoutClicked() {
+    if (!window.pywebview) {
+        console.error("pywebview not ready");
+        return;
+    }
+
+    window.pywebview.api.logout_button();
 }
 
 function onStopServerClicked() {
@@ -31,22 +76,7 @@ function onStopServerClicked() {
     window.pywebview.api.stop_server_button();
 }
 
-function onLogoutClicked() {
-    if (!window.pywebview) {
-        console.error("pywebview not ready");
-        return;
-    }
-    
-    // This is state.ConnectionNotConnected
-    connectionStateChanged("not_connected");
 
-    // This is state.MatchNone
-    matchStateChanged("no_match");
-
-    setUserData("");
-
-    window.pywebview.api.logout_button();
-}
 
 function onOpenWebsite(page) {
     if (!window.pywebview) {
@@ -103,7 +133,7 @@ function onSubmitPath(path, searchType){
     window.pywebview.api.submit_path(path, dediPath);
 }
 // Expose this to the window
-window.saveProxySecret = saveProxySecret;
+window.handleLoginClicked = handleLoginClicked;
 window.onStopServerClicked = onStopServerClicked;
 window.onLogoutClicked = onLogoutClicked;
 window.onOpenWebsite = onOpenWebsite;

@@ -6,8 +6,11 @@ This module contains the UIActions class; an instance of which is passed into th
 The methods of this class are called by the javascript functions under resources/ui_actions.js
 """
 import webbrowser
+
+import requests
 from RankedDST.dedicated_server.world_launcher import stop_dedicated_server
 
+from RankedDST.tools.secret import hash_string
 from RankedDST.tools.logger import logger
 import RankedDST.tools.state as state
 from RankedDST.tools.config import save_data
@@ -25,13 +28,41 @@ class UIActions:
         self._disconnect_socket = socket_disconnect_func
 
 
-    def save_proxy_secret(self, new_secret: str) -> None:
+    def login_clicked(self, username: str, password: str) -> None:
         """
-        Triggered when the `proxy-secret-button` is clicked on the UI.
+        Triggered when the `login-button` is clicked on the UI.
         """
-        state.set_user_data({"proxy_secret" : new_secret})
+        logger.debug("Login button clicked")
+        hashed_password = hash_string(password)
+
+        try:
+            response = requests.post(
+                url=f"{state.route_url()}/login",
+                json={
+                    "username" : username, 
+                    "hashed_password" : hashed_password,
+                    "proxy": True
+                }
+            )
+        except Exception as e:
+            show_popup(window=self._window_getter(), popup_msg=f"Error logging in: {e}", button_msg="Dang")
+            return
+
+        data: dict = response.json()
+        if not data.get("success", False):
+            message = data.get("message", None)
+            if not message:
+                show_popup(window=self._window_getter(), popup_msg="Critical Error", button_msg="That's not good...")
+                return
+            
+            show_popup(window=self._window_getter(), popup_msg=message, button_msg="Okay")
+            return
+        
+
+        proxy_secret = data.get('auth_token')
+        state.set_user_data({"proxy_secret" : proxy_secret})
         secret_key = "proxy_secret_dev" if state.DEVELOPING else "proxy_secret"
-        save_data({secret_key: new_secret})
+        save_data({secret_key: proxy_secret})
 
         self._connect_socket()
 
@@ -44,6 +75,14 @@ class UIActions:
 
         Disconnects the websocket connection and changes state to not connected.
         """
+        window = self._window_getter()
+        state.set_connection_state(new_state=state.ConnectionNotConnected, window=window)
+        state.set_match_state(new_state=state.MatchNone, window=window)
+        state.set_user_data(new_values={'proxy_secret' : ""})
+
+        secret_key = 'proxy_secret_dev' if state.DEVELOPING else 'proxy_secret'
+        save_data(save_values={secret_key: ""})
+        
         stop_dedicated_server()
         self._disconnect_socket()
 
@@ -53,7 +92,7 @@ class UIActions:
 
         Valid pages are `'stats', 'leaderboard', 'queue', 'history', 'profile', 'setup' and ''`
         """
-        assert page in ["", "stats", "leaderboard", "queue", "history", "profile", "setup"], f"Invalid page: {page}"
+        assert page in ["", "stats", "leaderboard", "queue", "history", "profile", "setup?tab=no-dedi", "setup?tab=no-cluster"], f"Invalid page: {page}"
         
         url = f"{state.site_url()}/{page}"
         
@@ -88,8 +127,8 @@ class UIActions:
         state.set_user_data(new_values={write_key : path})
         state.set_connection_state(state.ConnectionConnecting)
 
-        if dedi_path:
-            self._connect_socket()
+        # if dedi_path:
+        #     self._connect_socket()
 
     def submit_path(self, path: str, dedi_path: bool) -> None:
         if not isinstance(path, str):
@@ -109,5 +148,5 @@ class UIActions:
         state.set_user_data(new_values={write_key : path})
         state.set_connection_state(state.ConnectionConnecting)
 
-        if dedi_path:
-            self._connect_socket()
+        # if dedi_path:
+        #     self._connect_socket()

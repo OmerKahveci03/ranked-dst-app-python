@@ -51,8 +51,6 @@ def connect_websocket() -> socketio.Client | None:
     
     state.ensure_prerequisites(window=window_object)
 
-    state.set_connection_state(state.ConnectionConnecting, window_object)
-
     raw_secret = state.get_user_data("proxy_secret")
     if not raw_secret or raw_secret == "":
         state.set_connection_state(state.ConnectionNotConnected, window_object)
@@ -60,6 +58,8 @@ def connect_websocket() -> socketio.Client | None:
         stop_dedicated_server()
         logger.info("🕹️ No Proxy secret stored — skipping connection.")
         return client_socket
+    
+    state.set_connection_state(state.ConnectionConnecting, window_object)
 
     hashed = hash_string(raw_secret)
 
