@@ -14,7 +14,7 @@
 
     <!-- Dedicated Server Tools Not Present -->
     <div id="no-path-section">
-      Missing Prerequisites
+      Dedicated Server Tools Not Found...
     </div>
 
       <!-- Server May Be Down -->
@@ -24,14 +24,7 @@
 
     <!-- Not Connected -->
     <div id="not-connected-section">
-      <input
-        id="proxy-secret-input"
-        class="header-button"
-        type="password"
-        placeholder="Enter Proxy Secret"
-        autocomplete="off"
-      />
-      <div id="proxy-secret-button" class="header-button" onclick="saveProxySecret()">Save</div>
+      Configurations are Good
     </div>
 
     <!-- Connecting -->
@@ -69,7 +62,7 @@
         />
       </div>
       <div id="no-cluster-bot" class="no-cluster-txt">Click below for a step-by-step guide</div>
-      <div id="no-cluster-help" class="button" onclick="onOpenWebsite('setup')">Please Show Me How</div>
+      <div id="no-cluster-help" class="button" onclick="onOpenWebsite('setup?tab=no-cluster')">Please Show Me How</div>
     </div>
 
     <!-- Missing Dedicated Server Tools -->
@@ -80,7 +73,7 @@
       <div id="no-path-info" class="row">
         <div class="label">You need to download them on steam to proceed</div>
         <img src="./images/conceptual_scrubber.webp"/>
-        <div class="button" onclick="onOpenWebsite('setup')">Show Me How</div>
+        <div class="button" onclick="onOpenWebsite('setup?tab=no-dedi')">Show Me How</div>
       </div>
       <div id="no-path-tools" class="row">
         <div class="label">If you already have it downloaded and we can't find it, then please provide the path below.</div>
@@ -111,18 +104,26 @@
       <div id="top-row-not-connected" class="row">
         <img class="row-img" src="./images/missing_character.webp"/>
         <div class="label">
-          Create an account on our <u class="clickable" onclick="onOpenWebsite('profile')">website</u> to get started!
+          Log into your <b>Ranked DST</b> account to play!
+          <!-- Create an account on our <u class="clickable" onclick="onOpenWebsite('profile')">website</u> to get started! -->
         </div>
       </div>
-      
-      <div id="bot-row-not-connected" class="row">
-        <div class="label">
-          Then click <strong>'Generate Secret'</strong> at the profile page and paste it above.
-        </div>
-        <img class="row-img" src="./images/ancient_lunarune_stone.webp"/>
-      </div>
-      <div id="last-row-not-connected" class="row">
-        <div class="label">You will be ready to play after this!</div>
+
+      <div id="login-row">
+        <input
+          id="login-username-input"
+          class="path-input"
+          placeholder="Enter Username"
+          autocomplete="off"
+        />
+        <input
+          id="login-password-input"
+          class="path-input"
+          type="password"
+          placeholder="Enter Password"
+          autocomplete="off"
+        />
+        <div id="login-button" class="button" onclick="handleLoginClicked()">Login!</div>
       </div>
     </div>
 

@@ -98,7 +98,7 @@ def try_find_prerequisite_path(candidate_path: str | None = None, mute_logs: boo
             Path.home() / "Documents" / "Klei" / "DoNotStarveTogether",
             Path.home() / "OneDrive" / "Documents" / "Klei" / "DoNotStarveTogether",
         ]
-    candidates = [] # for testing
+    #candidates = [] # for testing
 
     if isinstance(candidate_path, str):
         candidates.append(Path(candidate_path))

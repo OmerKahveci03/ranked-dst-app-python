@@ -67,7 +67,7 @@ MatchInProgress = "in_progress" # You are in the world while the match is live
 MatchCompleted = "completed" # Your run is over but the match is still live so you are waiting for the others to finish
 
 valid_match_states = [MatchNone, MatchWorldGenerating, MatchWorldReady, MatchInProgress, MatchCompleted]
-match_state = MatchNone
+match_state = None
 
 def get_match_state() -> str:
     """
@@ -108,7 +108,8 @@ ConnectionNoPath = "no_path" # if prerequisite file paths do not exist we cannot
 ConnectionNoCluster = "no_cluster" # no cluster path (klei dst path)
 
 valid_connection_states = [ConnectionNoCluster, ConnectionNoPath, ConnectionNotConnected, ConnectionServerDown, ConnectionConnecting, ConnectionConnected]
-connection_state = ConnectionNotConnected
+# connection_state = ConnectionNotConnected
+connection_state = None
 
 def get_connection_state() -> str:
     """
@@ -134,6 +135,7 @@ def set_connection_state(new_state: str, window: webview.Window | None = None) -
     
     global connection_state
     if connection_state == new_state:
+        logger.info(f"Connection state was already {new_state}. No updates to ui.")
         return
     
     logger.info( f"Changing connection state to {new_state}")
@@ -266,7 +268,8 @@ def ensure_prerequisites(window: webview.Window) -> None:
     2. The dedicated server tools and prerequisite files exist on the user's computer
     3. A proxy secret is stored in memory
 
-    If any step fails, then this function waits until this is no longer the case.
+    If step 1 or 2 fails, then the function waits until the condition is satisfied. If step 3 fails, then
+    nothing happens
     """
     current_user_data = get_user_data()
 
@@ -279,7 +282,7 @@ def ensure_prerequisites(window: webview.Window) -> None:
 
         wait_required_folder(dedi_path=False)
     else:
-        logger.info("Cluster path exists!")
+        logger.info("(1/3) Cluster path exists!")
         if saved_cluster_path != valid_cluster_path:
             set_user_data({"cluster_path" : valid_cluster_path})
             save_data({'cluster_path': valid_cluster_path})
@@ -294,7 +297,7 @@ def ensure_prerequisites(window: webview.Window) -> None:
 
         wait_required_folder(dedi_path=True)
     else:
-        logger.info("Dedicated server tools are ready to go!")
+        logger.info("2/3) Dedicated server tools are ready to go!")
         set_user_data({"dedi_path" : valid_path})
 
         if saved_dedi_path != valid_path:
@@ -304,10 +307,10 @@ def ensure_prerequisites(window: webview.Window) -> None:
     # 3. Check for proxy secret
     proxy_secret = current_user_data.get('proxy_secret', None)
     if proxy_secret:
-        logger.info(f"Proxy secret was stored as {proxy_secret}")
+        logger.info(f"(3/3) Proxy secret was stored as {proxy_secret}")
         set_user_data({"proxy_secret" : proxy_secret})
     else:
         logger.info("No proxy secret was stored.")
+        set_match_state(MatchNone, window=window) # likely not needed either
 
     logger.info(f"User data state is now: {get_user_data()}")
-    set_match_state(MatchNone, window=window) # likely not needed either
