@@ -212,8 +212,6 @@ def launch_shard(
                         {"proxy_secret_hash": hashed},
                         namespace="/proxy"
                     )
-                    state.set_match_state(new_state=state.MatchCompleted, window=window)
-                    stop_dedicated_server()
 
     threading.Thread(target=stream_output, daemon=True).start()
 

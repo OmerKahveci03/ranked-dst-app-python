@@ -118,7 +118,7 @@ def connect_websocket() -> socketio.Client | None:
         """
 
         logger.info(f"🛜 Proxy disconnect 🛜")
-        state.set_user_data(new_values={"user_id" : None, "username" : None, "match_id" : None, "proxy_secret" : None})
+        state.set_user_data(new_values={"user_id" : None, "username" : None, "match_id" : None})
         state.set_connection_state(new_state=state.ConnectionNotConnected, window=window_object)
         state.set_match_state(new_state=state.MatchNone, window=window_object)
 
