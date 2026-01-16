@@ -16,6 +16,8 @@ from RankedDST.ui.updates import update_match_state, update_connection_state, up
 
 DEVELOPING = False
 
+VERSION = 1.3
+
 # -------------------- NETWORKING STATE -------------------- #
 def route_url() -> str:
     """

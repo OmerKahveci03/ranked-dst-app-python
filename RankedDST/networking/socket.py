@@ -79,6 +79,8 @@ def connect_websocket() -> socketio.Client | None:
         populated.
 
         If match_id is not none in state.user_data, then the `request_world_files` event is emitted.
+
+        Emits an 'app_version' event to the backend as well.
         """
         auth_ready.wait(timeout=2)
         logger.info("On connect proxy")
@@ -90,6 +92,12 @@ def connect_websocket() -> socketio.Client | None:
         logger.info("✅ Socket.IO connected to /proxy")
         state.set_connection_state(state.ConnectionConnected, window_object)
 
+        client_socket.emit(
+            "app_version",
+            {"version" : state.VERSION},
+            namespace="/proxy"
+        )
+
         match_id = state.get_user_data("match_id")
         if not match_id:
             logger.info("Not in a match")
@@ -100,11 +108,8 @@ def connect_websocket() -> socketio.Client | None:
         if current_match_state != state.MatchCompleted:
             logger.info(f"In a match with state {current_match_state}! Requesting world files!")
             client_socket.emit(
-                "request_world_files",
-                {
-                    "match_id": match_id,
-                    "proxy_secret_hash": hashed,
-                },
+                "request_world_files", 
+                {"match_id": match_id, "proxy_secret_hash": hashed}, 
                 namespace="/proxy"
             )
 
@@ -216,6 +221,20 @@ def connect_websocket() -> socketio.Client | None:
         logger.info("Match complete. Shutting down server")
         stop_dedicated_server()
         state.set_match_state(state.MatchNone, window_object)
+    
+    @client_socket.on("show_popup", namespace="/proxy")
+    def on_show_popup(data):
+        show_message = data.get('message', None)
+        button_message = data.get('button_message', None)
+
+        if show_message is None or not isinstance(show_message, str):
+            logger.warning(f"Show popup was given with an incorrect show_message; {type(show_message)}\n\tdata: {type(data)}")
+            return
+        
+        if isinstance(button_message, str):
+            show_popup(window=window_object, popup_msg=show_message, button_msg=button_message)
+        else:
+            show_popup(window=window_object, popup_msg=show_message)
 
     try:
         logger.info("🔌 Connecting Socket.IO client 🔌")
@@ -224,6 +243,7 @@ def connect_websocket() -> socketio.Client | None:
             namespaces=["/proxy"],
             auth={"proxy_secret_hash": hashed},
             transports=["websocket"],
+            retry=True
         )
     except Exception as e:
         # Exceptions are raised for issues at the transport level
