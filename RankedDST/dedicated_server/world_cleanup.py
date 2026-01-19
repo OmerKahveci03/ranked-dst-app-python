@@ -10,6 +10,7 @@ import shutil
 import zipfile
 import re
 
+import RankedDST.tools.state as state
 from RankedDST.tools.logger import logger
 
 NUM_SAVES = 5
@@ -42,7 +43,14 @@ def clean_old_files() -> None:
     """
     logger.info("Cleaning old Ranked DST matches (simple mode)...")
 
-    base_dir = Path.home() / "Documents" / "Klei" / "DoNotStarveTogether"
+    base_dir = state.get_user_data(get_key="cluster_path")
+    if not isinstance(base_dir, str) or not base_dir:
+        logger.debug("Cannot cleanup without a cluster path")
+        return
+    
+    base_dir = Path(base_dir)
+
+    # base_dir = Path.home() / "Documents" / "Klei" / "DoNotStarveTogether"
     past_dir = base_dir / "Past Ranked Matches"
     past_dir.mkdir(exist_ok=True)
 
