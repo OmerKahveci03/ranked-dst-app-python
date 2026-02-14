@@ -61,7 +61,7 @@ class UIActions:
 
         proxy_secret = data.get('auth_token')
         state.set_user_data({"proxy_secret" : proxy_secret})
-        secret_key = "proxy_secret_dev" if state.DEVELOPING else "proxy_secret"
+        secret_key = state.get_secret_key()
         save_data({secret_key: proxy_secret})
 
         self._connect_socket()
@@ -80,7 +80,7 @@ class UIActions:
         state.set_match_state(new_state=state.MatchNone, window=window)
         state.set_user_data(new_values={'proxy_secret' : ""})
 
-        secret_key = 'proxy_secret_dev' if state.DEVELOPING else 'proxy_secret'
+        secret_key = state.get_secret_key()
         save_data(save_values={secret_key: ""})
         
         stop_dedicated_server()

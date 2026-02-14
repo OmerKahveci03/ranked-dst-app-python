@@ -2,6 +2,7 @@
 setlocal
 
 :: -------- Configuration --------
+:: 2 = local build
 :: 1 = dev build (console visible)
 :: 0 = release build (no console)
 set DEV_MODE=0
@@ -10,6 +11,9 @@ set APP_NAME=RankedDSTProxy
 :: -------- App name suffix --------
 if "%DEV_MODE%"=="1" (
     set APP_NAME=%APP_NAME%Dev
+)
+if "%DEV_MODE%"=="2" (
+    set APP_NAME=%APP_NAME%Local
 )
 set ENTRY_POINT=RankedDST\__main__.py
 set VENV_PYTHON=venv\Scripts\python.exe

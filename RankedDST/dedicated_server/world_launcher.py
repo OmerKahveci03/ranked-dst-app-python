@@ -241,7 +241,12 @@ def start_dedicated_server(
     client_socket: socketio.Client (default None)
         The global socketio object. Needed to emit events to the server when certain events take place.
     """
-    base_cluster_dir = Path.home() / "Documents" / "Klei" / "DoNotStarveTogether"
+    base_dir = state.get_user_data(get_key="cluster_path")
+    if not isinstance(base_dir, str) or not base_dir:
+        logger.debug("Cannot cleanup without a cluster path")
+        return
+    
+    base_cluster_dir = Path(base_dir)
 
     dedi_path = state.get_user_data(get_key='dedi_path')
     logger.info(f"dedi path is: {dedi_path}")

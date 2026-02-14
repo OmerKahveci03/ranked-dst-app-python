@@ -14,9 +14,20 @@ from RankedDST.tools.path_checker import try_find_prerequisite_path
 
 from RankedDST.ui.updates import update_match_state, update_connection_state, update_user_data
 
+# False - prod
+# True - dev
+# None - local
 DEVELOPING = False
 
-VERSION = 1.31
+def get_secret_key():
+    if DEVELOPING is None:
+        return "proxy_secret_local"
+    elif DEVELOPING:
+        return "proxy_secret_dev"
+    else:
+        return "proxy_secret"
+
+VERSION = 1.33
 
 # -------------------- NETWORKING STATE -------------------- #
 def route_url() -> str:
@@ -29,9 +40,13 @@ def route_url() -> str:
         The URL exposed by the backend for http requests.
     """
 
-    if DEVELOPING:
+    if DEVELOPING is None:
         return "http://localhost:5000"
-    return "https://dontgetlosttogether.com/api"
+    elif DEVELOPING:
+        return "https://dontgetlosttogether.com/api"
+    else:
+        return "https://rankeddst.com/api"
+    
 
 def socket_url() -> str:
     """
@@ -43,9 +58,12 @@ def socket_url() -> str:
         The URL exposed by the backend for websocket connections.
     """
 
-    if DEVELOPING:
+    if DEVELOPING is None:
         return "http://localhost:5000"
-    return "https://dontgetlosttogether.com"
+    elif DEVELOPING:
+        return "https://dontgetlosttogether.com"
+    else:
+        return "https://rankeddst.com"
 
 def site_url() -> str:
     """
@@ -57,9 +75,12 @@ def site_url() -> str:
         The URL exposed by the frontend
     """
 
-    if DEVELOPING:
+    if DEVELOPING is None:
         return "http://localhost:5173"
-    return "https://dontgetlosttogether.com"
+    elif DEVELOPING:
+        return "https://dontgetlosttogether.com"
+    else:
+        return "https://rankeddst.com"
 
 # -------------------- MATCH STATE -------------------- #
 MatchNone = "no_match" # You are not in a live match
@@ -259,8 +280,11 @@ def load_initial_state() -> None:
             config_data: dict[str, str] = {}
     
     dev_secret = config_data.pop('proxy_secret_dev', None)
+    local_secret = config_data.pop('proxy_secret_local', None)
     if DEVELOPING:
         config_data['proxy_secret'] = dev_secret
+    elif DEVELOPING is None:
+        config_data['proxy_secret'] = local_secret
     set_user_data(new_values=config_data)
 
 def ensure_prerequisites(window: webview.Window) -> None:

@@ -1,6 +1,6 @@
 import os, json
 
-CONFIG_KEYS = ["proxy_secret_dev", "proxy_secret", "dedi_path", "cluster_path"]
+CONFIG_KEYS = ["proxy_secret_dev", "proxy_secret_local", "proxy_secret", "dedi_path", "cluster_path"]
 
 def get_config_path() -> str:
     """

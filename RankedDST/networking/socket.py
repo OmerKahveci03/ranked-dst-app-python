@@ -194,7 +194,7 @@ def connect_websocket() -> socketio.Client | None:
         )
         show_popup(window=window_object, popup_msg="Invalid Proxy Secret")
         # Our saved secret doesn't work, so we will delete it
-        secret_key = "proxy_secret_dev" if state.DEVELOPING else "proxy_secret"
+        secret_key = state.get_secret_key()
         save_data({secret_key : ""})
         state.set_connection_state(state.ConnectionNotConnected, window_object)
         client_socket.disconnect()
