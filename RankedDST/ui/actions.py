@@ -92,7 +92,7 @@ class UIActions:
 
         Valid pages are `'stats', 'leaderboard', 'queue', 'history', 'profile', 'setup' and ''`
         """
-        assert page in ["", "stats", "leaderboard", "queue", "history", "profile", "setup?tab=no-dedi", "setup?tab=no-cluster"], f"Invalid page: {page}"
+        assert page in ["", "stats", "leaderboard", "queue", "history", "profile", "setup?tab=no-dedi", "setup?tab=no-cluster", "setup?tab=need-update"], f"Invalid page: {page}"
         
         url = f"{state.site_url()}/{page}"
         

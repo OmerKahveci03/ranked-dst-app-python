@@ -126,6 +126,11 @@ body {
         color: var(--warning);
     }
 
+    #need-update-section {
+        font-size: 32px;
+        /* color: var(--warning); */
+    }
+
     #connecting-section {
         font-size: 36px;
     }
@@ -356,6 +361,46 @@ body {
                 max-width: 75px;
                 animation: shake 2s ease-in-out infinite both;
             }
+        }
+    }
+
+    #need-update-main {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        margin-top: 10px;
+        padding: 15px;
+        gap: 30px;
+
+        .need-update-label {
+            width: 100%;
+            padding: 0px 10px;
+
+            font-size: 34px;
+            text-align: center;
+            text-wrap: balance;
+        }
+
+        #need-update-top {
+            animation: fadeIn 0.7s ease-out both;
+        }
+
+        #need-update-img {
+            animation: fadeIn 0.4s ease-out both;
+            animation-delay: 0.5s;
+            height: 100px;
+        }
+
+        #need-update-bot {
+            animation: fadeIn 0.5s ease-out both;
+            animation-delay: 1.7s;
+        }
+
+        #need-update-button {
+            animation: fadeIn 0.3s ease-out both;
+            animation-delay: 2.3s;
         }
     }
 
@@ -713,7 +758,8 @@ body {
 
     #popup {
         width: 250px;
-        height: 200px;
+        min-height: 200px;
+        max-height: 700px;
 
         border: 2px solid var(--tertiary);
         border-radius: 24px;
@@ -730,13 +776,13 @@ body {
         animation-delay: 0.2s;
 
         #popup-msg {
-            font-size: 36px;
+            font-size: 32px;
 
             text-align: center;
             text-wrap: balance;
 
             max-width: 90%;
-            max-height: 100px;
+            max-height: 300px;
 
             overflow-x: hidden;
             overflow-y: auto;

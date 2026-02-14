@@ -17,6 +17,11 @@
       Dedicated Server Tools Not Found...
     </div>
 
+    <!-- Dedicated Server Tools do not match DST version -->
+    <div id="need-update-section">
+      Dedicated Server Tools May Need An Update
+    </div>
+
       <!-- Server May Be Down -->
     <div id="no-connection-section">
       Failed to reach our servers...
@@ -86,6 +91,21 @@
           autocomplete="off"
         />
       </div>
+    </div>
+
+    <!-- Dedicated Server Tools do not match DST version -->
+    <div id="need-update-main">
+      <div id="need-update-top" class="need-update-label">
+        A version mismatch was detected between your DST game and the dedicated server tools.
+      </div>
+
+      <img id="need-update-img" src="./images/broken_clockworks.webp"/>
+
+      <div id="need-update-bot" class="need-update-label">
+        This usually happens when Klei pushes an update to the game. To fix this, go to steam and update your server tools!
+      </div>
+
+      <div id="need-update-button" class="button" onclick="onOpenWebsite('setup?tab=need-update')">Show me how!</div>
     </div>
 
     <!-- Server May Be Down -->
