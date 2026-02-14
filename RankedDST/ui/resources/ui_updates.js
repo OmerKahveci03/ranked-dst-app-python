@@ -8,6 +8,7 @@
 const connectionStateElements = {
     no_cluster: ["no-cluster-section", "no-cluster-main"],
     no_path: ["no-path-section", "no-path-main"],
+    need_update: ["need-update-section", "need-update-main"],
     not_connected: ["not-connected-section", "not-connected-main"],
     no_server: ["no-connection-section", "no-server-main"],
     connecting: ["connecting-section", "connecting-main"],

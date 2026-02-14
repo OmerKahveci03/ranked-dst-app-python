@@ -138,3 +138,55 @@ def open_file_explorer() -> str:
 
     logger.info("User cancelled DST path selection")
     return None
+
+def check_dst_versions(dedi_fp: str) -> bool:
+    """
+    Checks if the dedicated server tools match the same version as the dst game. Returns true if they match. False
+    otherwise.
+
+    Raises an error if the files are not found.
+
+    Parameters
+    ----------
+    dedi_fp: str
+        The valid full file path to the directory containing the dedicated server tools. Should contain the version.txt file,
+        and a level below there should be a 'Don't Stave Together' folder that also contains version.txt.
+
+    Returns
+    -------
+    versions_match: bool
+        Whether the two versions match. If either file is not found then an exception is raised.
+    """
+
+    # return False
+
+    expected_dedi_tool_basename = "Don't Starve Together Dedicated Server"
+    expected_dst_basename = "Don't Starve Together"
+
+    dedi_path = Path(dedi_fp)
+    if dedi_path.name != expected_dedi_tool_basename:
+        raise ValueError(f"Dedicated server tools path has an unexpected name: {dedi_path.name}")
+
+    steamapps_path = dedi_path.parent
+    dst_path = steamapps_path / expected_dst_basename
+
+    if not dst_path.exists():
+        raise ValueError("Don't Starve Together not found. Is it installed on your computer?")
+    if not dst_path.is_dir():
+        raise ValueError("DST path should be a directory, not a file")
+    
+    versions: list[int] = []
+    for path in [dst_path, dedi_path]:
+        version_file_path = path / "version.txt"
+
+        if not version_file_path.exists() or not version_file_path.is_file():
+            raise ValueError(f"Version file not found for {path.name}")
+        
+        # read it and append to versions
+        version = version_file_path.read_text().strip()
+        versions.append(version)
+
+    return versions[0] == versions[1]
+    
+
+    

@@ -10,9 +10,9 @@ import time
 
 from RankedDST.tools.logger import logger
 from RankedDST.tools.config import get_config_path, save_data
-from RankedDST.tools.path_checker import try_find_prerequisite_path
+from RankedDST.tools.path_checker import try_find_prerequisite_path, check_dst_versions
 
-from RankedDST.ui.updates import update_match_state, update_connection_state, update_user_data
+from RankedDST.ui.updates import update_match_state, update_connection_state, update_user_data, show_popup
 
 # False - prod
 # True - dev
@@ -27,7 +27,7 @@ def get_secret_key():
     else:
         return "proxy_secret"
 
-VERSION = 1.33
+VERSION = 1.34
 
 # -------------------- NETWORKING STATE -------------------- #
 def route_url() -> str:
@@ -126,11 +126,17 @@ def set_match_state(new_state: str, window: webview.Window | None = None) -> Non
 ConnectionConnected = "connected"
 ConnectionConnecting = "connecting"
 ConnectionNotConnected = "not_connected"
+ConnectionNeedUpdate = "need_update" # dst and mod tools are not same version
 ConnectionServerDown = "no_server"
 ConnectionNoPath = "no_path" # if prerequisite file paths do not exist we cannot continue
 ConnectionNoCluster = "no_cluster" # no cluster path (klei dst path)
 
-valid_connection_states = [ConnectionNoCluster, ConnectionNoPath, ConnectionNotConnected, ConnectionServerDown, ConnectionConnecting, ConnectionConnected]
+valid_connection_states = [
+    ConnectionNoCluster, ConnectionNoPath, ConnectionNeedUpdate, 
+    ConnectionNotConnected, ConnectionServerDown, 
+    ConnectionConnecting, ConnectionConnected
+]
+
 # connection_state = ConnectionNotConnected
 connection_state = None
 
@@ -259,6 +265,34 @@ def wait_required_folder(check_interval: float = 2.0, dedi_path: bool = True) ->
         logger.info(f"{search_folder} found in {int(elapsed)} seconds! No longer waiting.")
         return
 
+def wait_matching_versions(window: webview.Window, check_interval: float = 2.0) -> None:
+    """
+    Should be run when dedicated server tools do not match the same version as dst. Repeatedly checks if the versions match.
+
+    Exits if the version.txt for both dst and dedi tools match. Is blocking until then.
+    """
+
+    logger.info(f"Waiting for dst and dedi tools to have matching versions...")
+    start = time.time()
+    while True:
+        time.sleep(check_interval)
+        dedi_path = get_user_data(get_key="dedi_path")
+        
+        try:
+            versions_match = check_dst_versions(dedi_fp=dedi_path)
+        except Exception as e:
+            # push to ui
+            show_popup(window=window, popup_msg=str(e), button_msg="Dang it")
+            logger.error(f"An error occurred when checking dst versions: {e}") # to do: handle this case properly
+            break
+
+        if not versions_match:
+            continue
+
+        elapsed = time.time() - start
+        logger.info(f"DST versions match after {int(elapsed)} seconds! No longer waiting.")
+        return
+
 def load_initial_state() -> None:
     """
     Loads the ~/home/ranked_dst/config.json file and reads the data found.
@@ -292,9 +326,10 @@ def ensure_prerequisites(window: webview.Window) -> None:
     Ensures that the following three prerequisites are in place:
     1. The cluster path in memory maps to the actual folder for cluster files to be created in
     2. The dedicated server tools and prerequisite files exist on the user's computer
-    3. A proxy secret is stored in memory
+    3. DST and dedicated server tools have the same version
+    4. A proxy secret is stored in memory
 
-    If step 1 or 2 fails, then the function waits until the condition is satisfied. If step 3 fails, then
+    If step 1, 2, or 3 fails, then the function waits until the condition is satisfied. If step 4 fails, then
     nothing happens
     """
     current_user_data = get_user_data()
@@ -308,7 +343,7 @@ def ensure_prerequisites(window: webview.Window) -> None:
 
         wait_required_folder(dedi_path=False)
     else:
-        logger.info("(1/3) Cluster path exists!")
+        logger.info("(1/4) Cluster path exists!")
         if saved_cluster_path != valid_cluster_path:
             set_user_data({"cluster_path" : valid_cluster_path})
             save_data({'cluster_path': valid_cluster_path})
@@ -323,17 +358,28 @@ def ensure_prerequisites(window: webview.Window) -> None:
 
         wait_required_folder(dedi_path=True)
     else:
-        logger.info("2/3) Dedicated server tools are ready to go!")
+        logger.info("2/4) Dedicated server tools are ready to go!")
         set_user_data({"dedi_path" : valid_path})
 
         if saved_dedi_path != valid_path:
             set_user_data({"dedi_path" : valid_path})
             save_data({'dedi_path': valid_path})
 
-    # 3. Check for proxy secret
+    # 3. Check for dedi tools and dst versions to be matching
+    versions_match = check_dst_versions(dedi_fp=valid_path) # to do: this can raise an error
+    if not versions_match:
+        logger.info("DST version does not match dedicated tools")
+        set_connection_state(new_state=ConnectionNeedUpdate, window=window)
+
+        wait_matching_versions(window=window)
+
+    else:
+        logger.info("3/4) Dedicated server tools match the DST version!")
+
+    # 4. Check for proxy secret
     proxy_secret = current_user_data.get('proxy_secret', None)
     if proxy_secret:
-        logger.info(f"(3/3) Proxy secret was stored as {proxy_secret}")
+        logger.info(f"(4/4) Proxy secret was stored as {proxy_secret}")
         set_user_data({"proxy_secret" : proxy_secret})
     else:
         logger.info("No proxy secret was stored.")
