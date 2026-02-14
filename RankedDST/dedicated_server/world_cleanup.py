@@ -4,14 +4,14 @@ RankedDST/dedicated_server/world_cleanup.py
 This module is tasked with zipping up old ranked DST worlds and moving them to a
 new location. Up to 5 will be kept. The rest are deleted.
 """
-
+from datetime import datetime, timedelta
 from pathlib import Path
 import shutil
 import zipfile
 import re
 
 import RankedDST.tools.state as state
-from RankedDST.tools.logger import logger
+from RankedDST.tools.logger import logger, LOG_DIR
 
 NUM_SAVES = 5
 
@@ -40,7 +40,31 @@ def clean_old_files() -> None:
     1. Move ALL 'Ranked DST Match *' folders into 'Past Ranked Matches' as ZIPs
     2. In 'Past Ranked Matches', keep only the 5 most recent ZIPs
        (by match number), delete the rest
+    3. Delete 1 week old logs
     """
+    
+    
+    log_path = Path(LOG_DIR)
+    if log_path.exists():
+        logger.info("Cleaning 1 week old logs")
+        cutoff_date = datetime.now().date() - timedelta(days=7)
+
+        for log_file in log_path.glob("*.log"):
+            try:
+                date_str = log_file.name.split("-")[0:3]
+                date_str = "-".join(date_str)  # YYYY-MM-DD
+                log_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except Exception:
+                logger.warning(f"Skipping unexpected log format: {log_file.name}")
+                continue
+
+            if log_date < cutoff_date:
+                try:
+                    logger.info(f"Deleting old log: {log_file.name}")
+                    log_file.unlink()
+                except Exception as e:
+                    logger.error(f"Failed to delete {log_file.name}: {e}")
+
     logger.info("Cleaning old Ranked DST matches (simple mode)...")
 
     base_dir = state.get_user_data(get_key="cluster_path")
