@@ -1,0 +1,83 @@
+name: Cross Platform Multi-Mode Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-13]
+        mode: [prod, dev, local]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # ---------------------------------------------------------
+      # Set Mode Variables
+      # ---------------------------------------------------------
+      - name: Set Mode Variables
+        shell: bash
+        run: |
+          if [ "${{ matrix.mode }}" = "prod" ]; then
+            echo "APP_NAME=RankedDstProxy" >> $GITHUB_ENV
+            echo "RANKED_DST_MODE=prod" >> $GITHUB_ENV
+          elif [ "${{ matrix.mode }}" = "dev" ]; then
+            echo "APP_NAME=RankedDstProxyDev" >> $GITHUB_ENV
+            echo "RANKED_DST_MODE=dev" >> $GITHUB_ENV
+          else
+            echo "APP_NAME=RankedDstProxyLocal" >> $GITHUB_ENV
+            echo "RANKED_DST_MODE=local" >> $GITHUB_ENV
+          fi
+
+      # ---------------------------------------------------------
+      # Build (Windows)
+      # ---------------------------------------------------------
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          export RANKED_DST_MODE=$RANKED_DST_MODE
+
+          pyinstaller RankedDST/__main__.py \
+            --onefile \
+            --noconsole \
+            --name $APP_NAME \
+            --icon RankedDST/ui/resources/icons/calibrated_perceiver.ico \
+            --add-data "RankedDST/ui/resources;RankedDST/ui/resources"
+
+      # ---------------------------------------------------------
+      # Build (Linux & macOS)
+      # ---------------------------------------------------------
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          export RANKED_DST_MODE=$RANKED_DST_MODE
+
+          pyinstaller RankedDST/__main__.py \
+            --onefile \
+            --name $APP_NAME \
+            --add-data "RankedDST/ui/resources:RankedDST/ui/resources"
+
+      # ---------------------------------------------------------
+      # Upload Artifacts
+      # ---------------------------------------------------------
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ matrix.os }}
+          path: dist/*
