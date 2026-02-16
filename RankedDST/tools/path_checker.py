@@ -139,7 +139,7 @@ def open_file_explorer() -> str:
     logger.info("User cancelled DST path selection")
     return None
 
-def check_dst_versions(dedi_fp: str) -> bool:
+def check_dst_versions(dedi_fp: str, raise_error: bool = False) -> bool:
     """
     Checks if the dedicated server tools match the same version as the dst game. Returns true if they match. False
     otherwise.
@@ -151,6 +151,8 @@ def check_dst_versions(dedi_fp: str) -> bool:
     dedi_fp: str
         The valid full file path to the directory containing the dedicated server tools. Should contain the version.txt file,
         and a level below there should be a 'Don't Stave Together' folder that also contains version.txt.
+    raise_error: bool (default False)
+        If true, errors will be raised.
 
     Returns
     -------
@@ -165,22 +167,38 @@ def check_dst_versions(dedi_fp: str) -> bool:
 
     dedi_path = Path(dedi_fp)
     if dedi_path.name != expected_dedi_tool_basename:
-        raise ValueError(f"Dedicated server tools path has an unexpected name: {dedi_path.name}")
+        err_msg = f"Dedicated server tools path has an unexpected name: {dedi_path.name}"
+        logger.error(err_msg)
+        if raise_error:
+            raise ValueError()
+        return False
 
     steamapps_path = dedi_path.parent
     dst_path = steamapps_path / expected_dst_basename
 
     if not dst_path.exists():
-        raise ValueError("Don't Starve Together not found. Is it installed on your computer?")
+        err_msg = "Don't Starve Together not found. Is it installed on your computer?"
+        logger.error(err_msg)
+        if raise_error:
+            raise ValueError(err_msg)
+        return False
     if not dst_path.is_dir():
-        raise ValueError("DST path should be a directory, not a file")
+        err_msg = "DST path should be a directory, not a file"
+        logger.error(err_msg)
+        if raise_error:
+            raise ValueError(err_msg)
+        return False
     
     versions: list[int] = []
     for path in [dst_path, dedi_path]:
         version_file_path = path / "version.txt"
 
         if not version_file_path.exists() or not version_file_path.is_file():
-            raise ValueError(f"Version file not found for {path.name}")
+            err_msg = f"Version file not found for {path.name}"
+            logger.error(err_msg)
+            if raise_error:
+                raise ValueError()
+            return False
         
         # read it and append to versions
         version = version_file_path.read_text().strip()
