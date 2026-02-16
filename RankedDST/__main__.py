@@ -1,5 +1,8 @@
 import threading
+import sys
+import os
 
+from argparse import ArgumentParser
 from RankedDST.ui.window import create_window, get_window
 
 from RankedDST.networking.proxy import start_proxy_server
@@ -7,7 +10,7 @@ from RankedDST.networking.socket import connect_websocket, disconnect_websocket
 
 from RankedDST.dedicated_server.world_cleanup import clean_old_files
 
-from RankedDST.tools.state import load_initial_state
+from RankedDST.tools.state import load_initial_state, set_developing
 from RankedDST.tools.logger import logger
 from RankedDST.tools.job_object import create_kill_on_close_job
 
@@ -26,6 +29,29 @@ def init():
     connect_websocket()
 
 if __name__ == "__main__":
+    if getattr(sys, "frozen", False):
+        # Running as compiled executable
+        mode = os.environ.get("RANKED_DST_MODE", "local")
+    else:
+        # Running normally
+        parser = ArgumentParser()
+        parser.add_argument("--dev", action="store_true")
+        parser.add_argument("--prod", action="store_true")
+        args = parser.parse_args()
+
+        if args.prod:
+            mode = "prod"
+        elif args.dev:
+            mode = "dev"
+        else:
+            mode = "local"
+
+    # None is local
+    if mode == "prod":
+        set_developing(developing=False)
+    elif mode == "dev":
+        set_developing(developing=True)
+
     create_kill_on_close_job()
     proxy_thread = threading.Thread(
         target=start_proxy_server,

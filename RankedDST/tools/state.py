@@ -17,7 +17,11 @@ from RankedDST.ui.updates import update_match_state, update_connection_state, up
 # False - prod
 # True - dev
 # None - local
-DEVELOPING = False
+DEVELOPING = None
+
+def set_developing(developing: bool | None):
+    global DEVELOPING
+    DEVELOPING = developing
 
 def get_secret_key():
     if DEVELOPING is None:
