@@ -30,8 +30,14 @@ def init():
 
 if __name__ == "__main__":
     if getattr(sys, "frozen", False):
-        # Running as compiled executable
-        mode = os.environ.get("RANKED_DST_MODE", "local")
+        exe_name = os.path.basename(sys.executable).lower()
+
+        if "dev" in exe_name:
+            mode = "dev"
+        elif "local" in exe_name:
+            mode = "local"
+        else:
+            mode = "prod"
     else:
         # Running normally
         parser = ArgumentParser()
