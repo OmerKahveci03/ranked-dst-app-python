@@ -4,6 +4,7 @@ RankedDST/tools/path_checker.py
 This module is tasked with ensuring that prerequisite file paths exist. Otherwise, no socket connection should take place
 """
 
+import sys
 from pathlib import Path
 
 # Using tkinter only for opening file explorer
@@ -44,7 +45,20 @@ def required_files_exist(search_path: str | Path, mute_logs: bool = False, dedi_
     
     if dedi_path:
         mods_setup_fp = Path(search_path) / "mods" / "dedicated_server_mods_setup.lua"
-        nullrender_fp = Path(search_path) / "bin64" / "dontstarve_dedicated_server_nullrenderer_x64.exe"
+
+        
+        if sys.platform.startswith("win"):
+            nullrender_fp = Path(search_path) / "bin64" / "dontstarve_dedicated_server_nullrenderer_x64.exe"
+
+        elif sys.platform.startswith("linux"):
+            nullrender_fp = Path(search_path) / "bin64" / "dontstarve_dedicated_server_nullrenderer_x64"
+
+        elif sys.platform == "darwin":  # macOS
+            nullrender_fp = Path(search_path) / "macOS" / "dontstarve_dedicated_server_nullrenderer"
+
+        else:
+            raise RuntimeError(f"Unsupported platform: {sys.platform}")
+        
         search_files = [mods_setup_fp, nullrender_fp]
 
         expected_folder_name = "Don't Starve Together Dedicated Server"
