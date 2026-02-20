@@ -6,6 +6,7 @@ The source of truth for the project's state.
 import webview
 import json
 import os
+import sys
 import time
 
 from RankedDST.tools.logger import logger
@@ -269,14 +270,21 @@ def wait_required_folder(check_interval: float = 2.0, dedi_path: bool = True) ->
         logger.info(f"{search_folder} found in {int(elapsed)} seconds! No longer waiting.")
         return
 
-def wait_matching_versions(window: webview.Window, check_interval: float = 2.0) -> None:
+def wait_matching_versions(window: webview.Window, check_interval: float = 2.0) -> bool:
     """
     Should be run when dedicated server tools do not match the same version as dst. Repeatedly checks if the versions match.
 
     Exits if the version.txt for both dst and dedi tools match. Is blocking until then.
 
     If check_dst_versions, the function exits but the message will popup.
+
+    Returns
+    -------
+    version_check_failed: bool
+        Returns True if the app is unable to determine if versions are matching
     """
+    if sys.platform == "darwin":
+        return True
 
     logger.info(f"Waiting for dst and dedi tools to have matching versions...")
     start = time.time()
@@ -290,14 +298,16 @@ def wait_matching_versions(window: webview.Window, check_interval: float = 2.0) 
             # push to ui
             show_popup(window=window, popup_msg=str(e), button_msg="Dang it")
             logger.error(f"An error occurred when checking dst versions: {e}")
-            return
+            return True
 
         if not versions_match:
             continue
 
         elapsed = time.time() - start
         logger.info(f"DST versions match after {int(elapsed)} seconds! No longer waiting.")
-        return
+        return False
+    
+    return True
 
 def load_initial_state() -> None:
     """
@@ -326,6 +336,8 @@ def load_initial_state() -> None:
     elif DEVELOPING is None:
         config_data['proxy_secret'] = local_secret
     set_user_data(new_values=config_data)
+
+update_warning_shown = False
 
 def ensure_prerequisites(window: webview.Window) -> None:
     """
@@ -372,15 +384,25 @@ def ensure_prerequisites(window: webview.Window) -> None:
             save_data({'dedi_path': valid_path})
 
     # 3. Check for dedi tools and dst versions to be matching
-    versions_match = check_dst_versions(dedi_fp=valid_path, raise_error=False)
-    if not versions_match:
-        logger.info("(3/4) DST version does not match dedicated tools")
-        set_connection_state(new_state=ConnectionNeedUpdate, window=window)
+    version_check_failed = False
+    if sys.platform != "darwin":
+        versions_match = check_dst_versions(dedi_fp=valid_path, raise_error=False)
+        if not versions_match:
+            logger.info("(3/4) DST version does not match dedicated tools")
+            set_connection_state(new_state=ConnectionNeedUpdate, window=window)
 
-        wait_matching_versions(window=window)
+            version_check_failed = wait_matching_versions(window=window)
 
+        else:
+            logger.info("(3/4) Dedicated server tools match the DST version!")
     else:
-        logger.info("(3/4) Dedicated server tools match the DST version!")
+        logger.info("(3/4) Skipping version check on MacOS")
+        version_check_failed = True
+
+    global update_warning_shown
+    if version_check_failed and not update_warning_shown:
+        show_popup(window=window, popup_msg="Unable to confirm the version of your dedicated server tools. Make sure they are up to date before playing!")
+        update_warning_shown = True
 
     # 4. Check for proxy secret
     proxy_secret = current_user_data.get('proxy_secret', None)
