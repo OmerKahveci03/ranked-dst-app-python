@@ -135,7 +135,7 @@ def connect_websocket() -> socketio.Client | None:
         Sets the connection state to `state.ConnectionServerDown`.
         """
 
-        logger.info(f"❌ Connect error: {type(data)} - {data}")
+        logger.error(f"❌ Connect error: {type(data)} - {data} - {state.socket_url()}")
         state.set_connection_state(new_state=state.ConnectionServerDown, window=window_object)
 
     @client_socket.on("connection_accepted", namespace="/proxy")
@@ -244,7 +244,7 @@ def connect_websocket() -> socketio.Client | None:
             state.socket_url(),
             namespaces=["/proxy"],
             auth={"proxy_secret_hash": hashed},
-            transports=["websocket"],
+            #transports=["websocket"],
             retry=True
         )
     except Exception as e:

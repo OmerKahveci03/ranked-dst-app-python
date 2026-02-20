@@ -5,13 +5,51 @@ This module is tasked with ensuring that prerequisite file paths exist. Otherwis
 """
 
 import sys
+import shutil
+import subprocess
 from pathlib import Path
 
-# Using tkinter only for opening file explorer
+# Using tkinter only for opening file explorer in windows
 import tkinter as tk
 from tkinter import filedialog
 
 from RankedDST.tools.logger import logger
+
+def get_dedi_tool_files(dedi_path: Path) -> tuple[Path, Path]:
+    """
+    Given the dedicated server tools base path, return the paths to the nullrenderer and mods setup. Paths are
+    based on the OS.
+
+    Parameters
+    ----------
+    dedi_path: Path
+        The path object that points to the base location of the dedicated server tools. Can be found on steam
+        by clicking 'browse local files'.
+
+    Returns
+    -------
+    nullrender_fp: Path
+        The path object that points to the nullrenderer executable. This is the file that hosts dedicated servers.
+    mods_setup_fp: Path
+        The path object that points to the lua file that stores the workshop IDS of mods that are used on the
+        dedicated server.
+    """
+
+    if sys.platform.startswith("win"):
+        nullrender_fp = dedi_path / "bin64" / "dontstarve_dedicated_server_nullrenderer_x64.exe"
+        mods_setup_fp = dedi_path / "mods" / "dedicated_server_mods_setup.lua"
+    elif sys.platform.startswith("linux"):
+        nullrender_fp = dedi_path / "bin64" / "dontstarve_dedicated_server_nullrenderer_x64"
+        mods_setup_fp = dedi_path / "mods" / "dedicated_server_mods_setup.lua"
+
+    elif sys.platform == "darwin":  # macOS
+        nullrender_fp = dedi_path / "dontstarve_dedicated_server_nullrenderer.app" / "Contents" / "macOS" / "dontstarve_dedicated_server_nullrenderer"
+        mods_setup_fp = dedi_path / "dontstarve_dedicated_server_nullrenderer.app" / "Contents" / "mods" / "dedicated_server_mods_setup.lua"
+        # Base: /Users/name/Library/Application Support/Steam/steamapps/common/Don't Starve Together Dedicated Server
+    else: 
+        raise RuntimeError(f"Unsupported platform: {sys.platform}")
+    
+    return nullrender_fp, mods_setup_fp
 
 def required_files_exist(search_path: str | Path, mute_logs: bool = False, dedi_path: bool = True) -> bool:
     """
@@ -44,20 +82,8 @@ def required_files_exist(search_path: str | Path, mute_logs: bool = False, dedi_
     search_path = Path(search_path)
     
     if dedi_path:
-        mods_setup_fp = Path(search_path) / "mods" / "dedicated_server_mods_setup.lua"
-
         
-        if sys.platform.startswith("win"):
-            nullrender_fp = Path(search_path) / "bin64" / "dontstarve_dedicated_server_nullrenderer_x64.exe"
-
-        elif sys.platform.startswith("linux"):
-            nullrender_fp = Path(search_path) / "bin64" / "dontstarve_dedicated_server_nullrenderer_x64"
-
-        elif sys.platform == "darwin":  # macOS
-            nullrender_fp = Path(search_path) / "macOS" / "dontstarve_dedicated_server_nullrenderer"
-
-        else:
-            raise RuntimeError(f"Unsupported platform: {sys.platform}")
+        nullrender_fp, mods_setup_fp = get_dedi_tool_files(dedi_path=search_path)
         
         search_files = [mods_setup_fp, nullrender_fp]
 
@@ -70,7 +96,8 @@ def required_files_exist(search_path: str | Path, mute_logs: bool = False, dedi_
         expected_folder_name = "DoNotStarveTogether"
 
     if search_path.name != expected_folder_name:
-        logger.info(f"Expected the folder name to be {expected_folder_name}, not {search_path.name}")
+        if not mute_logs:
+            logger.info(f"Expected the folder name to be {expected_folder_name}, not {search_path.name}")
         return False
     for fp in search_files:
         if not fp.exists():
@@ -103,10 +130,23 @@ def try_find_prerequisite_path(candidate_path: str | None = None, mute_logs: boo
     """
 
     if dedi_path:
-        candidates = [
-            r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server",
-            r"C:\Program Files\Steam\steamapps\common\Don't Starve Together Dedicated Server",
-        ]
+        if sys.platform.startswith("win"):
+            candidates = [
+                r"C:\Program Files (x86)\Steam\steamapps\common\Don't Starve Together Dedicated Server",
+                r"C:\Program Files\Steam\steamapps\common\Don't Starve Together Dedicated Server",
+            ]
+        elif sys.platform.startswith("linux"):
+            candidates = [
+                Path.home() / ".steam" / "steam" / "steamapps" / "common" / "Don't Starve Together Dedicated Server",
+                Path.home() / ".local" / "share" / "Steam" / "steamapps" / "common" / "Don't Starve Together Dedicated Server"
+            ]
+        elif sys.platform == "darwin":
+            candidates = [
+                # Path.home() / "Library" / r"Application Support" / "Steam" / "steamapps" / "common" / r"Don't Starve Together Dedicated Servers",
+                Path.home() / "Library" / "Application Support" / "Steam" / "steamapps" / "common" / "Don't Starve Together Dedicated Server"
+            ]
+        else:
+            candidates = []
     else:
         candidates = [
             Path.home() / "Documents" / "Klei" / "DoNotStarveTogether",
@@ -136,15 +176,54 @@ def open_file_explorer() -> str:
         The path the user selected in the file explorer
     """
     logger.info("Opening file explorer...")
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
 
-    path = filedialog.askdirectory(
-        title="Select Don't Starve Together Dedicated Server Folder"
-    )
+    if sys.platform == "darwin":
+        script = """
+        set theFolder to choose folder with prompt "Select Don't Starve Together Dedicated Server Folder"
+        POSIX path of theFolder
+        """
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True,
+            text=True,
+        )
 
-    root.destroy()
+        if result.returncode == 0:
+            path = result.stdout.strip()
+        else:
+            path = None
+
+    elif sys.platform == "win32":
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+
+        path = filedialog.askdirectory(title="Select Don't Starve Together Dedicated Server Folder")
+
+        root.destroy()
+    elif sys.platform == "linux":
+        if shutil.which("zenity"):
+            result = subprocess.run(
+                [
+                    "zenity",
+                    "--file-selection",
+                    "--directory",
+                    "--title=Select Don't Starve Together Dedicated Server Folder",
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+            if result.returncode == 0:
+                path = result.stdout.strip()
+            else:
+                path = None
+        else:
+            logger.warning("Zenity not installed. Falling back to terminal input.")
+            path = input("Enter DST Dedicated Server folder path: ").strip()
+
+    else:
+        raise RuntimeError(f"Unrecognized os: {sys.platform}")
 
     if path:
         logger.info(f"User selected DST path: {path}")

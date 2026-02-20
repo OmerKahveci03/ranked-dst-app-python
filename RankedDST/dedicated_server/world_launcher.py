@@ -14,12 +14,18 @@ import threading
 import webview
 import socketio
 
+from pathlib import Path
+
 import RankedDST.tools.state as state
+
+from RankedDST.ui.updates import show_popup
+
 from RankedDST.tools.secret import hash_string
 from RankedDST.tools.job_object import assign_process
 
-from pathlib import Path
 from RankedDST.tools.logger import logger, server_logger
+from RankedDST.tools.path_checker import get_dedi_tool_files
+
 from RankedDST.dedicated_server.server_manager import SERVER_MANAGER
 from RankedDST.dedicated_server.world_cleanup import clean_old_files
 
@@ -84,10 +90,10 @@ def create_cluster(
 
 def ensure_mods(
     mod_ids: list[str],
-    steam_mods_path: str,
+    mods_setup_fp: Path
 ) -> None:
     """
-    Ensures that the `dedicated_server_mods_setup.lua` file at the **steam_mods_path** contains all the
+    Ensures that the `dedicated_server_mods_setup.lua` file at the **mod_setup_file** contains all the
     mod ids provided. If not, then they will be added to the file.
 
     Each mod id must have a corresponding `ServerModSetup("<id>")` line in the file.
@@ -96,11 +102,10 @@ def ensure_mods(
     ----------
     mod_ids: list[str]
         A list of workshop ids for the mods that must exist at the `dedicated_server_mods_setup.lua` file.
-    steam_mods_path: str
-        The directory that must contain the `dedicated_server_mods_setup.lua` file.
+    mod_setup_file: Path
+        The path object that contains the full file path to the `dedicated_server_mods_setup.lua`
     """
-
-    mod_setup_file = Path(steam_mods_path) / "dedicated_server_mods_setup.lua"
+    # No write permission on mac :/
     valid_id = re.compile(r"^[0-9]{6,12}$")
 
     cleaned_ids: list[str] = []
@@ -113,8 +118,8 @@ def ensure_mods(
         cleaned_ids.append(mod_id)
 
     existing = ""
-    if mod_setup_file.exists():
-        existing = mod_setup_file.read_text(encoding="utf-8")
+    if mods_setup_fp.exists():
+        existing = mods_setup_fp.read_text(encoding="utf-8")
 
     missing_lines: list[str] = []
     for mod_id in cleaned_ids:
@@ -123,16 +128,16 @@ def ensure_mods(
             missing_lines.append(line)
     
     if not missing_lines:
-        logger.info(f" All {len(cleaned_ids)} mods already present in {mod_setup_file}")
+        logger.info(f" All {len(cleaned_ids)} mods already present in {mods_setup_fp}")
         return
 
-    mod_setup_file.parent.mkdir(parents=True, exist_ok=True)
+    mods_setup_fp.parent.mkdir(parents=True, exist_ok=True)
 
-    with mod_setup_file.open("a", encoding="utf-8") as f:
+    with mods_setup_fp.open("a", encoding="utf-8") as f:
         for line in missing_lines:
             f.write(line + "\n")
 
-    logger.info(f"🧩 Added {len(missing_lines)} new mod(s) to {mod_setup_file}")
+    logger.info(f"🧩 Added {len(missing_lines)} new mod(s) to {mods_setup_fp}")
 
 
 def launch_shard(
@@ -255,17 +260,18 @@ def start_dedicated_server(
     
     base_cluster_dir = Path(base_dir)
 
-    dedi_path = state.get_user_data(get_key='dedi_path')
-    logger.info(f"dedi path is: {dedi_path}")
-    nullrender_fp = os.path.join(dedi_path, 'bin64', 'dontstarve_dedicated_server_nullrenderer_x64.exe')
-
-    steam_mods_path = os.path.join(dedi_path, "mods")
+    dedi_path = Path(state.get_user_data(get_key='dedi_path'))
+    nullrender_fp, mods_setup_fp = get_dedi_tool_files(dedi_path=dedi_path)
 
     logger.debug(f"Starting Dedicated Server!\n\tdedi_path: {dedi_path}\n\tnullrender_fp: {nullrender_fp}")
 
-    assert os.path.exists(nullrender_fp), "Nullrender binary must exist"
-    assert os.path.exists(base_cluster_dir), f"Base cluster directory must exist at {base_cluster_dir}"
-
+    for path in [dedi_path, nullrender_fp, mods_setup_fp]:
+        if not path.exists():
+            err_msg = f"Missing {path.name}."
+            logger.error(err_msg)
+            show_popup(window=window, popup_msg=err_msg, button_msg="Oh no")
+            return 
+    
     if SERVER_MANAGER.is_running():
         logger.info("⚠️ Dedicated server already running ⚠️")
         return
@@ -275,9 +281,9 @@ def start_dedicated_server(
 
     cluster_name = f"Ranked DST Match {match_id}"
     cluster_dir = os.path.join(base_cluster_dir, cluster_name)
-    create_cluster(cluster_dir=cluster_dir, server_configs=server_configs)
 
-    ensure_mods(mod_ids=mod_ids, steam_mods_path=steam_mods_path)
+    create_cluster(cluster_dir=cluster_dir, server_configs=server_configs)
+    ensure_mods(mod_ids=mod_ids, mods_setup_fp=mods_setup_fp)
 
     raw_secret = state.get_user_data("proxy_secret")
     hashed = hash_string(raw_secret)
