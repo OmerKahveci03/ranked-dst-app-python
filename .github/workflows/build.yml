@@ -8,76 +8,118 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        mode: [prod, dev, local]
 
     runs-on: ${{ matrix.os }}
 
     steps:
+      # ---------------------------------------------------------
+      # Checkout
+      # ---------------------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ---------------------------------------------------------
+      # Setup Python
+      # ---------------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
+      # ---------------------------------------------------------
+      # Install Dependencies
+      # ---------------------------------------------------------
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
 
       # ---------------------------------------------------------
-      # Set Mode Variables
+      # Build All Modes (Windows)
       # ---------------------------------------------------------
-      - name: Set Mode Variables
-        shell: bash
-        run: |
-          if [ "${{ matrix.mode }}" = "prod" ]; then
-            echo "APP_NAME=RankedDstProxy" >> $GITHUB_ENV
-            echo "RANKED_DST_MODE=prod" >> $GITHUB_ENV
-          elif [ "${{ matrix.mode }}" = "dev" ]; then
-            echo "APP_NAME=RankedDstProxyDev" >> $GITHUB_ENV
-            echo "RANKED_DST_MODE=dev" >> $GITHUB_ENV
-          else
-            echo "APP_NAME=RankedDstProxyLocal" >> $GITHUB_ENV
-            echo "RANKED_DST_MODE=local" >> $GITHUB_ENV
-          fi
-
-      # ---------------------------------------------------------
-      # Build (Windows)
-      # ---------------------------------------------------------
-      - name: Build (Windows)
+      - name: Build All Modes (Windows)
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          export RANKED_DST_MODE=$RANKED_DST_MODE
-
+          # PROD
+          export RANKED_DST_MODE=prod
           pyinstaller RankedDST/__main__.py \
             --onefile \
             --noconsole \
-            --name $APP_NAME \
+            --name RankedDstProxy \
+            --icon RankedDST/ui/resources/icons/calibrated_perceiver.ico \
+            --add-data "RankedDST/ui/resources;RankedDST/ui/resources"
+
+          # DEV
+          export RANKED_DST_MODE=dev
+          pyinstaller RankedDST/__main__.py \
+            --onefile \
+            --noconsole \
+            --name RankedDstProxyDev \
+            --icon RankedDST/ui/resources/icons/calibrated_perceiver.ico \
+            --add-data "RankedDST/ui/resources;RankedDST/ui/resources"
+
+          # LOCAL
+          export RANKED_DST_MODE=local
+          pyinstaller RankedDST/__main__.py \
+            --onefile \
+            --noconsole \
+            --name RankedDstProxyLocal \
             --icon RankedDST/ui/resources/icons/calibrated_perceiver.ico \
             --add-data "RankedDST/ui/resources;RankedDST/ui/resources"
 
       # ---------------------------------------------------------
-      # Build (Linux & macOS)
+      # Build All Modes (Linux & macOS)
       # ---------------------------------------------------------
-      - name: Build (Unix)
+      - name: Build All Modes (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          export RANKED_DST_MODE=$RANKED_DST_MODE
-
+          # PROD
+          export RANKED_DST_MODE=prod
           pyinstaller RankedDST/__main__.py \
             --onefile \
-            --name $APP_NAME \
+            --name RankedDstProxy \
+            --add-data "RankedDST/ui/resources:RankedDST/ui/resources"
+
+          # DEV
+          export RANKED_DST_MODE=dev
+          pyinstaller RankedDST/__main__.py \
+            --onefile \
+            --name RankedDstProxyDev \
+            --add-data "RankedDST/ui/resources:RankedDST/ui/resources"
+
+          # LOCAL
+          export RANKED_DST_MODE=local
+          pyinstaller RankedDST/__main__.py \
+            --onefile \
+            --name RankedDstProxyLocal \
             --add-data "RankedDST/ui/resources:RankedDST/ui/resources"
 
       # ---------------------------------------------------------
-      # Upload Artifacts
+      # Package Everything Into One Zip Per OS
+      # ---------------------------------------------------------
+      - name: Package Builds
+        shell: bash
+        run: |
+          mkdir bundle
+          mv dist/* bundle/
+
+          cd bundle
+
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a RankedDstProxy-Windows.zip *
+          elif [ "${{ runner.os }}" = "Linux" ]; then
+            zip -r RankedDstProxy-Linux.zip *
+          else
+            zip -r RankedDstProxy-macOS.zip *
+          fi
+
+      # ---------------------------------------------------------
+      # Upload Artifact (One Per OS)
       # ---------------------------------------------------------
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
-          path: dist/${{ env.APP_NAME }}*
+          name: RankedDstProxy-${{ runner.os }}
+          path: bundle/*.zip
