@@ -4,6 +4,7 @@ import os
 
 from argparse import ArgumentParser
 from RankedDST.ui.window import create_window, get_window
+from RankedDST.ui.updates import show_popup
 
 from RankedDST.networking.proxy import start_proxy_server
 from RankedDST.networking.socket import connect_websocket, disconnect_websocket
@@ -24,9 +25,12 @@ def init():
         if window: 
             break
     
-    load_initial_state()
-    clean_old_files()
-    connect_websocket()
+    try:
+        load_initial_state()
+        clean_old_files()
+        connect_websocket()
+    except Exception as e:
+        show_popup(window=window, popup_msg=f"A critical error occurred: {e}", button_msg="Seriously?")
 
 if __name__ == "__main__":
     if getattr(sys, "frozen", False):

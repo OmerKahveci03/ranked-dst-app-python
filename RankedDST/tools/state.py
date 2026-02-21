@@ -31,7 +31,7 @@ def get_secret_key():
     else:
         return "proxy_secret"
 
-VERSION = 1.34
+VERSION = 1.35
 
 # -------------------- NETWORKING STATE -------------------- #
 def route_url() -> str:
