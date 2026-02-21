@@ -17,7 +17,11 @@ from RankedDST.ui.updates import update_match_state, update_connection_state, up
 # False - prod
 # True - dev
 # None - local
-DEVELOPING = False
+DEVELOPING = None
+
+def set_developing(developing: bool | None):
+    global DEVELOPING
+    DEVELOPING = developing
 
 def get_secret_key():
     if DEVELOPING is None:
@@ -270,6 +274,8 @@ def wait_matching_versions(window: webview.Window, check_interval: float = 2.0) 
     Should be run when dedicated server tools do not match the same version as dst. Repeatedly checks if the versions match.
 
     Exits if the version.txt for both dst and dedi tools match. Is blocking until then.
+
+    If check_dst_versions, the function exits but the message will popup.
     """
 
     logger.info(f"Waiting for dst and dedi tools to have matching versions...")
@@ -279,12 +285,12 @@ def wait_matching_versions(window: webview.Window, check_interval: float = 2.0) 
         dedi_path = get_user_data(get_key="dedi_path")
         
         try:
-            versions_match = check_dst_versions(dedi_fp=dedi_path)
+            versions_match = check_dst_versions(dedi_fp=dedi_path, raise_error=True)
         except Exception as e:
             # push to ui
             show_popup(window=window, popup_msg=str(e), button_msg="Dang it")
-            logger.error(f"An error occurred when checking dst versions: {e}") # to do: handle this case properly
-            break
+            logger.error(f"An error occurred when checking dst versions: {e}")
+            return
 
         if not versions_match:
             continue
@@ -366,15 +372,15 @@ def ensure_prerequisites(window: webview.Window) -> None:
             save_data({'dedi_path': valid_path})
 
     # 3. Check for dedi tools and dst versions to be matching
-    versions_match = check_dst_versions(dedi_fp=valid_path) # to do: this can raise an error
+    versions_match = check_dst_versions(dedi_fp=valid_path, raise_error=False)
     if not versions_match:
-        logger.info("DST version does not match dedicated tools")
+        logger.info("(3/4) DST version does not match dedicated tools")
         set_connection_state(new_state=ConnectionNeedUpdate, window=window)
 
         wait_matching_versions(window=window)
 
     else:
-        logger.info("3/4) Dedicated server tools match the DST version!")
+        logger.info("(3/4) Dedicated server tools match the DST version!")
 
     # 4. Check for proxy secret
     proxy_secret = current_user_data.get('proxy_secret', None)

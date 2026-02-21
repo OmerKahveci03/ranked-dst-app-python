@@ -5,6 +5,8 @@ Production is implemented in the GoLang app.
 """
 
 import os
+import sys
+import signal
 import re
 import subprocess
 import time
@@ -166,15 +168,20 @@ def launch_shard(
         "-shard", shard,
     ]
 
-    proc = subprocess.Popen(
-        cmd,
-        cwd=os.path.dirname(nullrender_fp),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-        creationflags=CREATE_NO_WINDOW,
-    )
+    popen_kwargs = {
+        "cwd": os.path.dirname(nullrender_fp),
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.STDOUT,
+        "text": True,
+        "bufsize": 1,
+    }
+    if sys.platform == "win32":
+        popen_kwargs["creationflags"] = 0x08000000  # CREATE_NO_WINDOW
+    else:
+        popen_kwargs["preexec_fn"] = os.setsid  # create process group
+
+    proc = subprocess.Popen(cmd, **popen_kwargs)
+
     assign_process(proc)
     SERVER_MANAGER.set_shard_status(shard=shard, status='launching')
 
@@ -327,7 +334,10 @@ def stop_dedicated_server(timeout: float = 1.0) -> None:
     for shard, proc in processes.items():
         if proc and proc.poll() is None:
             logger.info(f"Gracefully terminating {shard} process")
-            proc.terminate()
+            if sys.platform == "win32":
+                proc.terminate()
+            else:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
     
     start = time.time()
     while time.time() - start < timeout:
@@ -339,7 +349,10 @@ def stop_dedicated_server(timeout: float = 1.0) -> None:
     for shard, proc in processes.items():
         if proc and proc.poll() is None:
             logger.info(f"💀 Force killing {shard} shard 💀")
-            proc.kill()
+            if sys.platform == "win32":
+                proc.kill()
+            else:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
 
     SERVER_MANAGER.clear_subprocesses()
     logger.info("✅ Dedicated server stopped ✅")

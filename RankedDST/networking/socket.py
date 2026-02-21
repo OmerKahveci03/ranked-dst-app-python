@@ -214,7 +214,9 @@ def connect_websocket() -> socketio.Client | None:
     def on_run_complete(_):
         logger.info("Player's run is complete! Shutting down server")
         stop_dedicated_server()
-        state.set_match_state(state.MatchCompleted, window_object)
+
+        if state.get_match_state() != state.MatchNone:
+            state.set_match_state(state.MatchCompleted, window_object)
 
     @client_socket.on("match_complete", namespace="/proxy")
     def on_match_complete(_):
