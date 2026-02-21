@@ -79,5 +79,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_NAME }}-${{ matrix.os }}
-          path: dist/*
+          name: ${{ env.APP_NAME }}-${{ matrix.os }}.zip
+          path: dist/${{ env.APP_NAME }}*
